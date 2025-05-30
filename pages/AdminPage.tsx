@@ -1,15 +1,12 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient'; // นำเข้า Supabase Client
 import { Infographic, DisplayCategory } from '../types';
 import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons';
 
 interface AdminPageProps {
-  onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>; // Updated prop type
+  onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
 }
-
-const CORRECT_USERNAME = 'dragonfly13110';
-const CORRECT_PASSWORD = 'dragonfly1311013110';
 
 const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const navigate = useNavigate();
@@ -19,30 +16,36 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [summary, setSummary] = useState('');
   const [displayCategory, setDisplayCategory] = useState<DisplayCategory>(DisplayCategory.INFOGRAPHIC);
   const [tags, setTags] = useState('');
-
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // For loading state on submit
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [inputUsername, setInputUsername] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!supabase.auth.getSession());
+  const [inputEmail, setInputEmail] = useState(''); // เปลี่ยนจาก username เป็น email
   const [inputPassword, setInputPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputUsername === CORRECT_USERNAME && inputPassword === CORRECT_PASSWORD) {
-      setIsAuthenticated(true);
-      setAuthError('');
-    } else {
-      setAuthError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: inputEmail,
+        password: inputPassword,
+      });
+      if (error) {
+        setAuthError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      } else {
+        setIsAuthenticated(true);
+        setAuthError('');
+      }
+    } catch (error) {
+      setAuthError('เกิดข้อผิดพลาดในการล็อกอิน');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !imageUrl || !content || !summary) {
-        alert("กรุณากรอกข้อมูลให้ครบทุกช่องที่มีเครื่องหมาย *");
-        return;
+      alert('กรุณากรอกข้อมูลให้ครบทุกช่องที่มีเครื่องหมาย *');
+      return;
     }
     setIsSubmitting(true);
     try {
@@ -54,8 +57,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
         displayCategory,
         tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
       });
-      
-      // Reset form
       setTitle('');
       setImageUrl('');
       setContent('');
@@ -64,10 +65,9 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       setTags('');
       setIsSubmitted(true);
       setTimeout(() => setIsSubmitted(false), 3000);
-
     } catch (error) {
-      console.error("Failed to add infographic:", error);
-      alert("เกิดข้อผิดพลาดในการเพิ่มเนื้อหา กรุณาลองใหม่อีกครั้ง");
+      console.error('Failed to add infographic:', error);
+      alert('เกิดข้อผิดพลาดในการเพิ่มเนื้อหา กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,26 +75,26 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
 
   if (!isAuthenticated) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center" style={{ minHeight: 'calc(100vh - 10rem)'}}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center" style={{ minHeight: 'calc(100vh - 10rem)' }}>
         <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl">
           <h1 className="text-2xl font-bold text-brand-green-dark mb-6 text-center">เข้าสู่ระบบผู้ดูแล</h1>
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-brand-gray-darktext">
-                ชื่อผู้ใช้
+              <label htmlFor="email" className="block text-sm font-medium text-brand-gray-darktext">
+                อีเมล
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <IconUserCircle className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="text"
-                  id="username"
-                  value={inputUsername}
-                  onChange={(e) => setInputUsername(e.target.value)}
+                  type="email"
+                  id="email"
+                  value={inputEmail}
+                  onChange={(e) => setInputEmail(e.target.value)}
                   required
                   className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
-                  placeholder="username"
+                  placeholder="email@example.com"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               <label htmlFor="password" className="block text-sm font-medium text-brand-gray-darktext">
                 รหัสผ่าน
               </label>
-               <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <IconLockClosed className="h-5 w-5 text-gray-400" />
                 </div>
@@ -136,13 +136,11 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-xl">
         <h1 className="text-3xl font-bold text-brand-green-dark mb-8 text-center">เพิ่มเนื้อหาใหม่</h1>
-        
         {isSubmitted && (
           <div className="mb-6 p-4 bg-green-100 text-green-700 border border-green-300 rounded-md">
             เนื้อหาใหม่ถูกเพิ่มเรียบร้อยแล้ว!
           </div>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-brand-gray-darktext">
@@ -157,7 +155,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
             />
           </div>
-
           <div>
             <label htmlFor="imageUrl" className="block text-sm font-medium text-brand-gray-darktext">
               URL รูปภาพ (Image URL) <span className="text-red-500">*</span>
@@ -172,7 +169,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               placeholder="https://example.com/image.jpg"
             />
           </div>
-          
           <div>
             <label htmlFor="summary" className="block text-sm font-medium text-brand-gray-darktext">
               สรุปย่อ (Summary for card) <span className="text-red-500">*</span>
@@ -186,7 +182,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
             />
           </div>
-
           <div>
             <label htmlFor="content" className="block text-sm font-medium text-brand-gray-darktext">
               เนื้อหา (Content) <span className="text-red-500">*</span>
@@ -200,7 +195,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
             />
           </div>
-
           <div>
             <label htmlFor="displayCategory" className="block text-sm font-medium text-brand-gray-darktext">
               หมวดหมู่หลัก (Display Category) <span className="text-red-500">*</span>
@@ -217,7 +211,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               ))}
             </select>
           </div>
-
           <div>
             <label htmlFor="tags" className="block text-sm font-medium text-brand-gray-darktext">
               แท็ก (Tags, คั่นด้วยจุลภาค ",")
@@ -231,7 +224,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               placeholder="เช่น พืชไร่, เทคโนโลยี, เกษตรอินทรีย์"
             />
           </div>
-
           <div className="flex justify-end pt-2">
             <button
               type="button"
