@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Infographic } from '../types';
@@ -20,7 +19,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
           <h1 className="text-3xl font-bold text-brand-gray-darktext mb-4">ไม่พบเนื้อหา</h1>
           <p className="text-brand-gray-text text-lg mt-2 mb-6">ขออภัย ไม่พบเนื้อหาที่คุณกำลังค้นหา (ID: {itemId})</p>
           <button
-            onClick={() => navigate('/')} // Navigate to home if item not found
+            onClick={() => navigate('/')}
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
           >
             <IconArrowLeft className="mr-2 h-5 w-5" />
@@ -32,7 +31,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center">
       <button
         onClick={() => navigate(-1)}
         className="mb-8 inline-flex items-center text-brand-green hover:text-brand-green-dark font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green rounded-md px-3 py-1"
@@ -42,16 +41,16 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
         กลับ
       </button>
 
-      <article className="bg-white rounded-lg shadow-xl overflow-hidden">
+      <article className="bg-white rounded-lg shadow-xl overflow-hidden inline-block h-[100vh] flex flex-col">
         {item.imageUrl && (
           <img
-            className="w-full h-72 md:h-96 object-cover"
+            className="w-auto h-auto object-contain max-h-[60vh]" // รูปสูงสุด 60% ของจอ
             src={item.imageUrl}
             alt={item.title}
             onError={(e) => (e.currentTarget.src = 'https://picsum.photos/800/600?grayscale')}
           />
         )}
-        <div className="p-6 md:p-10">
+        <div className="p-6 md:p-10 max-w-full flex-1 overflow-y-auto"> {/* ส่วนเนื้อหาเลื่อนได้ */}
           <div className="mb-4">
             <span className="inline-block bg-brand-green-light text-brand-green-dark text-sm font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
               {item.displayCategory}
