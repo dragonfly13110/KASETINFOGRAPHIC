@@ -11,7 +11,7 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic }) => {
   const navigate = useNavigate(); // Initialize useNavigate
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col min-h-[500px]">
       <img
         className="w-full h-48 object-cover"
         src={infographic.imageUrl || 'https://picsum.photos/600/400?grayscale'}
