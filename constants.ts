@@ -1,5 +1,5 @@
 
-import { Infographic, DisplayCategory } from './types';
+import { Infographic, DisplayCategory, ALL_TAGS_OPTION } from './types';
 
 export const INITIAL_INFOGRAPHICS: Infographic[] = [
   {
@@ -77,7 +77,7 @@ export const INITIAL_INFOGRAPHICS: Infographic[] = [
 // Curated list of general tags. The sidebar dynamically generates tags from content,
 // but this list can serve as a reference or for future admin features.
 export const ALL_CATEGORIES_TAGS: string[] = [
-  'ทั้งหมด', 
+  ALL_TAGS_OPTION,
   'พืชไร่', 
   'พืชสวน', 
   'ประมง', 
