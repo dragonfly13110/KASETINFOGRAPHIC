@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient'; // นำเข้า Supabase Client
+import { supabase } from '../supabaseClient';
 import { Infographic, DisplayCategory } from '../types';
 import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons';
 
@@ -18,10 +18,18 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [tags, setTags] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(!!supabase.auth.getSession());
-  const [inputEmail, setInputEmail] = useState(''); // เปลี่ยนจาก username เป็น email
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
   const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkSession();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
