@@ -1,4 +1,0 @@
-[[redirects]]
-  from = "/pages/*"
-  to = "/pages/:splat"
-  status = 200
