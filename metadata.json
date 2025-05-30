@@ -1,0 +1,5 @@
+{
+  "name": "Kaset Infographic Hub",
+  "description": "A web application to browse and manage agricultural infographics. Users can view infographics categorized by topic and administrators can add new content.",
+  "requestFramePermissions": []
+}

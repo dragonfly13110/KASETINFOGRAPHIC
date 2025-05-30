@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คลังความรู้เกษตร Infographic</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sarabun: ['Sarabun', 'sans-serif'],
+          },
+          colors: {
+            'brand-green': {
+              DEFAULT: '#38A169', // green-600
+              light: '#E9F5EC',   // A custom light green similar to screenshots
+              dark: '#1E8259',    // A custom darker green for header
+              'light-hover': '#C8E6C9',
+            },
+            'brand-gray': {
+              DEFAULT: '#F3F4F6', // gray-100
+              text: '#4B5563',  // gray-600
+              darktext: '#1F2937' // gray-800
+            }
+          }
+        }
+      }
+    }
+  </script>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.6.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.44.4"
+  }
+}
+</script>
+</head>
+<body class="font-sarabun bg-brand-gray">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html><link rel="stylesheet" href="index.css">
+<script src="index.tsx" type="module"></script>
