@@ -10,7 +10,7 @@ const Thumbnail: React.FC<ThumbnailProps> = ({ src, alt }) => {
     <img
       src={src}
       alt={alt}
-      className="h-48 w-36 object-cover" // ปรับ h-48 (สูง) กับ w-36 (กว้าง) ตามต้องการ
+      className="h-48 w-36 object-cover rounded-md" // ปรับ h-48 (สูง) กับ w-36 (กว้าง) ตามต้องการ
     />
   );
 };

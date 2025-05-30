@@ -13,7 +13,7 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col min-h-[500px]">
       <img
-        className="w-full h-48 object-cover"
+        className="w-full h-80 object-cover"
         src={infographic.imageUrl || 'https://picsum.photos/600/400?grayscale'}
         alt={infographic.title}
         onError={(e) => (e.currentTarget.src = 'https://picsum.photos/600/400?grayscale')}
