@@ -9,8 +9,9 @@ import TechnologyPage from './pages/TechnologyPage';
 import AdminPage from './pages/AdminPage';
 import InfographicsPage from './pages/InfographicsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
-import { Infographic } from './types';
-import { supabase } from './supabaseClient';
+import { Infographic } from './src/types';
+import { supabase } from './src/supabaseClient';
+import KnowledgeLinks from './components/KnowledgeLinks';
 
 const App: React.FC = () => {
   const [infographics, setInfographics] = useState<Infographic[]>([]);
@@ -136,6 +137,7 @@ const App: React.FC = () => {
             <Route path="/admin" element={<AdminPage onAddInfographic={addInfographic} />} />
           </Routes>
         </main>
+        <KnowledgeLinks />
         <Footer />
       </div>
     </HashRouter>
