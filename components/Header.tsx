@@ -15,7 +15,7 @@ const Header: React.FC = () => {
           <div className="flex items-center">
             <NavLink to="/" className="flex items-center text-white">
               <IconLeaf className="h-8 w-8 mr-2" />
-              <span className="font-semibold text-xl tracking-tight">คลังความรู้เกษตร Infographic</span>
+              <span className="font-bold text-xl tracking-tight">คลังความรู้เกษตร Infographic </span>
             </NavLink>
           </div>
           <nav className="flex space-x-2 items-center">

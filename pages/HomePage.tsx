@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Infographic } from '../types';
+import { Infographic } from '../src/types';
 import SharedInfographicLayout from './SharedInfographicLayout';
 
 interface HomePageProps {
@@ -8,7 +8,7 @@ interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ infographics }) => {
-  const latestInfographics = infographics.slice(0, 5); // Show only the latest 5 items
+  const latestInfographics = infographics.slice(0, 20); // Show only the latest 5 items
   return <SharedInfographicLayout infographics={latestInfographics} pageType="home" />;
 };
 

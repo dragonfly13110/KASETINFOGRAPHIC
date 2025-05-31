@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Infographic } from '../types';
+import { Infographic } from '../src/types';
 import { IconArrowLeft } from '../components/icons';
 
 interface ItemDetailPageProps {

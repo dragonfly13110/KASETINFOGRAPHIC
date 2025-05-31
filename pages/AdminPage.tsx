@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient'; // ตรวจสอบ path ให้ถูกต้อง
-import { Infographic, DisplayCategory } from '../types'; // ตรวจสอบ path ให้ถูกต้อง
+import { supabase } from '../src/supabaseClient'; // ตรวจสอบ path ให้ถูกต้อง
+import { Infographic, DisplayCategory } from '../src/types'; // ตรวจสอบ path ให้ถูกต้อง
 import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons'; // ตรวจสอบ path ให้ถูกต้อง
 
 interface AdminPageProps {

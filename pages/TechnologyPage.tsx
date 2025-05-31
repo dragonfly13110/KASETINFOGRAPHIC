@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Infographic, DisplayCategory } from '../types';
+import { Infographic, DisplayCategory } from '../src/types';
 import SharedInfographicLayout from './SharedInfographicLayout';
 
 interface TechnologyPageProps {

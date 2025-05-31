@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import KnowledgeLinks from './components/KnowledgeLinks'; // นำเข้าคอมโพเนนต์ KnowledgeLinks
 import HomePage from './pages/HomePage';
 import ArticlesPage from './pages/ArticlesPage';
 import TechnologyPage from './pages/TechnologyPage';
@@ -11,7 +11,7 @@ import InfographicsPage from './pages/InfographicsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import { Infographic } from './src/types';
 import { supabase } from './src/supabaseClient';
-import KnowledgeLinks from './components/KnowledgeLinks';
+
 
 const App: React.FC = () => {
   const [infographics, setInfographics] = useState<Infographic[]>([]);
@@ -137,7 +137,7 @@ const App: React.FC = () => {
             <Route path="/admin" element={<AdminPage onAddInfographic={addInfographic} />} />
           </Routes>
         </main>
-        <KnowledgeLinks />
+        <KnowledgeLinks /> {/* เพิ่ม KnowledgeLinks ก่อน Footer */}
         <Footer />
       </div>
     </HashRouter>

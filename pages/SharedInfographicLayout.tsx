@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import { Infographic, DisplayCategory, ALL_TAGS_OPTION } from '../types';
+import { Infographic, DisplayCategory, ALL_TAGS_OPTION } from '../src/types';
 import InfographicCard from '../components/InfographicCard';
 import PageBanner from '../components/PageBanner';
 // import TagSidebar from '../components/TagSidebar'; // Removed
 import { IconMagnifyingGlass } from '../components/icons';
-import { PAGE_DESCRIPTIONS } from '../constants';
+import { PAGE_DESCRIPTIONS } from '../src/constants';
 
 interface SharedInfographicLayoutProps {
   infographics: Infographic[];
@@ -89,7 +89,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
 
         <main className="w-full">
           {filteredInfographics.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredInfographics.map(info => (
                 <InfographicCard key={info.id} infographic={info} />
               ))}
