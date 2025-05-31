@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import { Infographic, DisplayCategory } from '../types';
-import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons';
+import { supabase } from '../supabaseClient'; // ตรวจสอบ path ให้ถูกต้อง
+import { Infographic, DisplayCategory } from '../types'; // ตรวจสอบ path ให้ถูกต้อง
+import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons'; // ตรวจสอบ path ให้ถูกต้อง
 
 interface AdminPageProps {
   onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
@@ -10,6 +10,15 @@ interface AdminPageProps {
 
 const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const navigate = useNavigate();
+
+  // --- Authentication State ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [inputEmail, setInputEmail] = useState('');
+  const [inputPassword, setInputPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isAuthLoading, setIsAuthLoading] = useState(false); // เพิ่ม state สำหรับ loading ตอน login
+
+  // --- Infographic Form State ---
   const [title, setTitle] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [content, setContent] = useState('');
@@ -18,21 +27,29 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [tags, setTags] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [inputEmail, setInputEmail] = useState('');
-  const [inputPassword, setInputPassword] = useState('');
-  const [authError, setAuthError] = useState('');
 
-  useEffect(() => {
+ useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
     };
     checkSession();
-  }, []);
+
+    // Listener for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    // Cleanup function to unsubscribe when the component unmounts
+    return () => {
+      subscription?.unsubscribe(); // <--- เรียก unsubscribe จาก subscription
+    };
+  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
+    setIsAuthLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: inputEmail,
@@ -41,15 +58,16 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       if (error) {
         setAuthError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       } else {
-        setIsAuthenticated(true);
-        setAuthError('');
+        setIsAuthenticated(true); // Supabase listener should also catch this
       }
     } catch (error) {
-      setAuthError('เกิดข้อผิดพลาดในการล็อกอิน');
+      setAuthError('เกิดข้อผิดพลาดในการล็อกอิน โปรดลองอีกครั้ง');
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitInfographic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !imageUrl || !content || !summary) {
       alert('กรุณากรอกข้อมูลให้ครบทุกช่องที่มีเครื่องหมาย *');
@@ -65,6 +83,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
         displayCategory,
         tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
       });
+      // Reset form fields
       setTitle('');
       setImageUrl('');
       setContent('');
@@ -72,7 +91,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       setDisplayCategory(DisplayCategory.INFOGRAPHIC);
       setTags('');
       setIsSubmitted(true);
-      setTimeout(() => setIsSubmitted(false), 3000);
+      setTimeout(() => setIsSubmitted(false), 3000); // Hide success message after 3 seconds
     } catch (error) {
       console.error('Failed to add infographic:', error);
       alert('เกิดข้อผิดพลาดในการเพิ่มเนื้อหา กรุณาลองใหม่อีกครั้ง');
@@ -81,75 +100,91 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center" style={{ minHeight: 'calc(100vh - 10rem)' }}>
-        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl">
-          <h1 className="text-2xl font-bold text-brand-green-dark mb-6 text-center">เข้าสู่ระบบผู้ดูแล</h1>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-brand-gray-darktext">
-                อีเมล
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <IconUserCircle className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  value={inputEmail}
-                  onChange={(e) => setInputEmail(e.target.value)}
-                  required
-                  className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
-                  placeholder="email@example.com"
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-brand-gray-darktext">
-                รหัสผ่าน
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <IconLockClosed className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="password"
-                  id="password"
-                  value={inputPassword}
-                  onChange={(e) => setInputPassword(e.target.value)}
-                  required
-                  className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
-                  placeholder="password"
-                />
-              </div>
-            </div>
-            {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-dark"
-              >
-                เข้าสู่ระบบ
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
+  // --- Render Functions for different views ---
 
-  return (
+  const renderLoginForm = () => (
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl">
+        <h1 className="text-2xl font-bold text-brand-green-dark mb-6 text-center">เข้าสู่ระบบผู้ดูแล</h1>
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-brand-gray-darktext">
+              อีเมล
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <IconUserCircle className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="email"
+                id="email"
+                value={inputEmail}
+                onChange={(e) => setInputEmail(e.target.value)}
+                required
+                className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
+                placeholder="email@example.com"
+                disabled={isAuthLoading}
+              />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-brand-gray-darktext">
+              รหัสผ่าน
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <IconLockClosed className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="password"
+                id="password"
+                value={inputPassword}
+                onChange={(e) => setInputPassword(e.target.value)}
+                required
+                className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
+                placeholder="password"
+                disabled={isAuthLoading}
+              />
+            </div>
+          </div>
+          {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
+          <div>
+            <button
+              type="submit"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-dark disabled:opacity-50"
+              disabled={isAuthLoading}
+            >
+              {isAuthLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  const renderAdminContentForm = () => (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-xl">
-        <h1 className="text-3xl font-bold text-brand-green-dark mb-8 text-center">เพิ่มเนื้อหาใหม่</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-brand-green-dark">เพิ่มเนื้อหาใหม่</h1>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              // setIsAuthenticated(false); // Listener will handle this
+              navigate('/'); // Navigate to home or login page after sign out
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
+          >
+            ออกจากระบบ
+          </button>
+        </div>
+
         {isSubmitted && (
           <div className="mb-6 p-4 bg-green-100 text-green-700 border border-green-300 rounded-md">
             เนื้อหาใหม่ถูกเพิ่มเรียบร้อยแล้ว!
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmitInfographic} className="space-y-6">
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-brand-gray-darktext">
               หัวข้อ (Title) <span className="text-red-500">*</span>
@@ -258,6 +293,13 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       </div>
     </div>
   );
+
+  // --- Main Return based on authentication state ---
+  if (!isAuthenticated) {
+    return renderLoginForm();
+  }
+
+  return renderAdminContentForm();
 };
 
 export default AdminPage;
