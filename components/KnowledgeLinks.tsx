@@ -12,44 +12,51 @@ interface LinkCategory {
 
 const knowledgeLinkData: LinkCategory[] = [
   {
-    title: "หน่วยงานภาครัฐ",
+    title: "หน่วยงานภาครัฐและองค์กร",
     links: [
-      { href: "https://www.moac.go.th/", text: "กระทรวงเกษตรฯ" },
+      { href: "https://www.moac.go.th/", text: "กระทรวงเกษตรและสหกรณ์" },
       { href: "https://www.doa.go.th/", text: "กรมวิชาการเกษตร" },
       { href: "https://www.dld.go.th/", text: "กรมปศุสัตว์" },
       { href: "https://www.rid.go.th/", text: "กรมชลประทาน" },
-    ],
-  },
-  {
-    title: "งานวิจัยและข้อมูล",
-    links: [
-      { href: "https://www.nida.ac.th/", text: "NIDA" },
-      { href: "https://agri.cmu.ac.th/", text: "คณะเกษตร มช." },
-      { href: "https://www.kasetporpeang.com/", text: "เกษตรพอเพียง" },
-    ],
-  },
-  {
-    title: "คลังความรู้",
-    links: [
       { href: "https://www.doae.go.th/", text: "กรมส่งเสริมการเกษตร" },
-      { href: "https://www.farmbook.com/", text: "FarmBook" },
-      { href: "https://www.agrimanthailand.com/", text: "AgriMan Thailand" },
+      { href: "https://www.oae.go.th/", text: "สำนักงานเศรษฐกิจการเกษตร (สศก.)" },
     ],
   },
   {
-    title: "ชุมชนออนไลน์",
+    title: "งานวิจัย มหาวิทยาลัย และข้อมูลวิชาการ",
     links: [
-      { href: "https://www.facebook.com/RebelliousKasetTambon", text: "เกษตรตำบล (Facebook)" },
-      { href: "https://www.youtube.com/results?search_query=เกษตร", text: "YouTube – เกษตร" },
-      { href: "https://pantip.com/tag/เกษตร", text: "Pantip – เกษตร" },
+      { href: "https://www.ku.ac.th/th", text: "มหาวิทยาลัยเกษตรศาสตร์" }, // ย้าย NIDA ออก และเน้น ม.เกษตร
+      { href: "https://agri.cmu.ac.th/", text: "คณะเกษตรศาสตร์ มช." },
+      { href: "https://www.nstda.or.th/home/research-program/agriculture-and-biotechnology/", text: "สวทช. (กลุ่มเกษตรและเทคโนโลยีชีวภาพ)" },
+      { href: "https://www.arda.or.th/kasetinfo/", text: "คลังข้อมูล สวก. (ARDA KasetInfo)" },
+      { href: "https://www.doa.go.th/main/?page_id=123", text: "คลังความรู้ กรมวิชาการเกษตร" }, // เพิ่มคลังความรู้ DOA
+      { href: "https://www.arda.or.th/", text: "สวก. (สำนักงานพัฒนาการวิจัยการเกษตร)" },
+    ],
+  },
+  {
+    title: "คลังความรู้และเว็บไซต์เกษตร",
+    links: [
+      { href: "https://www.rakbankerd.com/agriculture/", text: "รักบ้านเกิด (เกษตร)" },
+      { href: "https://www.technologychaoban.com/", text: "เทคโนโลยีชาวบ้าน" },
+      { href: "https://www.kasetkaoklai.com/", text: "เกษตรก้าวไกล" }, // เว็บไซต์รวมบทความ เทคนิค
+      { href: "https://digital.doae.go.th/", text: "คลังความรู้ดิจิทัล กรมส่งเสริมฯ" }, // แหล่งรวมสื่อดิจิทัลของ DOAE
+    ],
+  },
+  {
+    title: "ชุมชนออนไลน์และสื่อ",
+    links: [
+      { href: "https://www.kasetporpeang.com/", text: "เกษตรพอเพียง (เว็บบอร์ด)" }, // ย้ายมาหมวดนี้ ชัดเจนว่าเป็นชุมชน
+      { href: "https://www.facebook.com/groups/kasetorganic", text: "กลุ่มเกษตรอินทรีย์ (Facebook)" }, // ตัวอย่างกลุ่ม Facebook ที่ Active
+      { href: "https://www.youtube.com/results?search_query=เกษตรอินทรีย์", text: "YouTube – เกษตรอินทรีย์" }, // ปรับคำค้นหา
+      { href: "https://pantip.com/tag/เกษตรกรรม", text: "Pantip – เกษตรกรรม" },
     ],
   },
 ];
 
 const KnowledgeLinks: React.FC = () => {
   return (
-    <section className="bg-gray-50 py-10 mt-16 border-t border-gray-200">
-      <div className="container mx-auto px-4">
+    <section className="bg-gray-50 pt-10 pb-0.5 mt-3 border-t border-gray-200">
+      <div className="container mx-auto px-auto">
         <h2 className="text-xl font-semibold text-brand-green mb-6 text-center">
           แหล่งข้อมูลภาคการเกษตรที่น่าสนใจ
         </h2>

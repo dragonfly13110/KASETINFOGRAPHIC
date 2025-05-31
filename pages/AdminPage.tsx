@@ -80,7 +80,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
         imageUrl,
         content,
         summary,
-        displayCategory,
+        category: displayCategory, // Changed property name to 'category'
         tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
       });
       // Reset form fields
