@@ -27,7 +27,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
 
   const filteredInfographics = useMemo(() => {
     return infographics
-      .filter(info => filterByCategory ? info.category === filterByCategory : true)
+      .filter(info => filterByCategory ? info.displayCategory === filterByCategory : true)
       .filter(info =>
         info.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         info.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,7 +40,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
 
   const allAvailableTags = useMemo(() => {
     const relevantInfographics = filterByCategory
-      ? infographics.filter(info => info.category === filterByCategory)
+      ? infographics.filter(info => info.displayCategory === filterByCategory)
       : infographics;
     const tagsFromContent = Array.from(new Set(relevantInfographics.flatMap(info => info.tags)));
     // Ensure "ทั้งหมด" is always the first option and unique tags follow

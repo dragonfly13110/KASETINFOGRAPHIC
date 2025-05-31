@@ -21,7 +21,7 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic }) => {
       <div className="p-6 flex flex-col flex-grow">
         <div>
           <span className="inline-block bg-brand-green text-white text-xs font-semibold px-2 py-1 rounded-full uppercase mb-2">
-            {infographic.category}
+            {infographic.displayCategory}
           </span>
           <h3 className="text-xl font-semibold text-brand-gray-darktext mb-2">{infographic.title}</h3>
           <p className="text-xs text-gray-500 mb-3">{infographic.date}</p>

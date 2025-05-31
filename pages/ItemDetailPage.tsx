@@ -57,7 +57,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
           </button>
           <div className="mb-4">
             <span className="inline-block bg-brand-green-light text-brand-green-dark text-sm font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
-              {item.category}
+              {item.displayCategory}
             </span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-brand-gray-darktext mb-3">{item.title}</h1>

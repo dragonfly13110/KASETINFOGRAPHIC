@@ -13,7 +13,7 @@ export interface Infographic {
   imageUrl: string;
   tags: string[];
   description?: string; // Optional description
-  category: DisplayCategory; // Use the existing enum
+  displayCategory: DisplayCategory; // Use the existing enum, aligned with DB schema
   date: string; // Client-provided date for the infographic content
   sourceUrl?: string; // Optional source URL
   summary: string; // Summary for display on cards
