@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../src/supabaseClient';
+import { supabase, handleImageUpload } from '../src/supabaseClient';
 import { Infographic, DisplayCategory } from '../src/types';
-import { IconPlusCircle, IconUserCircle, IconLockClosed, IconUpload } from '../components/icons';
+import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons';
 
 interface AdminPageProps {
   onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
@@ -29,7 +29,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- New State for Image Upload ---
-  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+  const [uploadedImageUrl] = useState('');
 
   useEffect(() => {
     const checkSession = async () => {
@@ -99,26 +99,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const fileName = `${Date.now()}_${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('images') // Replace 'images' with your Supabase bucket name
-      .upload(fileName, file);
-
-    if (error) {
-      console.error('Error uploading image:', error.message);
-      alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ');
-      return;
-    }
-
-    const imageUrl = supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl;
-    setUploadedImageUrl(imageUrl);
-    setImageUrl(imageUrl); // Automatically set the image URL field
   };
 
   // --- Render Functions for different views ---

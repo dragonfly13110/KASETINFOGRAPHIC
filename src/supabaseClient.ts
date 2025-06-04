@@ -39,7 +39,7 @@ export interface Database {
   };
 }
 
-const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+export const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
@@ -48,7 +48,7 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const sanitizedOriginalFileName = originalFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const fileName = `${Date.now()}_${sanitizedOriginalFileName}`;
 
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('images')
     .upload(fileName, file);
 
@@ -57,8 +57,4 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     alert(`เกิดข้อผิดพลาดในการอัปโหลดภาพ: ${error.message}`);
     return;
   }
-
-  const imageUrl = supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl;
-  setUploadedImageUrl(imageUrl);
-  setImageUrl(imageUrl); // Automatically set the image URL field
 };
