@@ -90,7 +90,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     setTags('');
   };
 
-  const showMessage = (message: string, type: 'success' | 'error') => {
+  const showMessage = (message: string, type: 'success' | 'error' | '') => {
     setSubmitMessage(message);
     setSubmitMessageType(type);
   };
@@ -137,7 +137,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     setExternalImageUrl(''); // เคลียร์ URL ภายนอกถ้ามีการเลือกไฟล์
     setIsUploadingImage(true);
     setUploadedFileUrl(''); // เคลียร์ URL ที่อัปโหลดสำเร็จก่อนหน้าก่อนการพยายามครั้งใหม่
-    showMessage('', ''); // Clear previous messages
+    showMessage('', 'success'); // Clear previous messages (type is required, but message is empty)
 
     try {
       const fileExt = file.name.split('.').pop();
