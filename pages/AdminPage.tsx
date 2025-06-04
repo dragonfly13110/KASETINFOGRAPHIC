@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../src/supabaseClient'; // ตรวจสอบ path ให้ถูกต้อง
-import { Infographic, DisplayCategory } from '../src/types'; // ตรวจสอบ path ให้ถูกต้อง
-import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons'; // ตรวจสอบ path ให้ถูกต้อง
+import { supabase } from '../src/supabaseClient';
+import { Infographic, DisplayCategory } from '../src/types';
+import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons';
 
 interface AdminPageProps {
   onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
@@ -16,7 +16,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [isAuthLoading, setIsAuthLoading] = useState(false); // เพิ่ม state สำหรับ loading ตอน login
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   // --- Infographic Form State ---
   const [title, setTitle] = useState('');
@@ -28,27 +28,21 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- Gemini Content Generation State ---
-  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-  const [generationError, setGenerationError] = useState('');
-
- useEffect(() => {
+  useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
     };
     checkSession();
 
-    // Listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
     });
 
-    // Cleanup function to unsubscribe when the component unmounts
     return () => {
-      subscription?.unsubscribe(); // <--- เรียก unsubscribe จาก subscription
+      subscription?.unsubscribe();
     };
-  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +56,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       if (error) {
         setAuthError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       } else {
-        setIsAuthenticated(true); // Supabase listener should also catch this
+        setIsAuthenticated(true);
       }
     } catch (error) {
       setAuthError('เกิดข้อผิดพลาดในการล็อกอิน โปรดลองอีกครั้ง');
@@ -84,7 +78,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
         imageUrl,
         content,
         summary,
-        displayCategory: displayCategory, // Align with the Infographic type and DB schema
+        displayCategory: displayCategory,
         tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
       });
       // Reset form fields
@@ -95,69 +89,12 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       setDisplayCategory(DisplayCategory.INFOGRAPHIC);
       setTags('');
       setIsSubmitted(true);
-      setTimeout(() => setIsSubmitted(false), 3000); // Hide success message after 3 seconds
+      setTimeout(() => setIsSubmitted(false), 3000);
     } catch (error) {
       console.error('Failed to add infographic:', error);
       alert('เกิดข้อผิดพลาดในการเพิ่มเนื้อหา กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleGenerateContentFromImage = async () => {
-    if (!imageUrl) {
-      setGenerationError('กรุณาใส่ URL รูปภาพก่อน');
-      return;
-    }
-    setIsGeneratingContent(true);
-    setGenerationError('');
-    setSummary(''); // Clear previous summary
-    setContent(''); // Clear previous content
-
-    const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
-    if (!apiKey) {
-      setGenerationError('ไม่พบ API Key ของ Gemini');
-      setIsGeneratingContent(false);
-      return;
-    }
-
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent?key=${apiKey}`;
-    const prompt = [
-      { "text": "จากรูปภาพนี้ โปรดสร้างคำอธิบายสั้นๆ (สรุปย่อ) และคำอธิบายแบบละเอียด กรุณาจัดรูปแบบผลลัพธ์ดังนี้:\nสรุปย่อ: [สรุปย่อของรูปภาพ]\nเนื้อหารายละเอียด: [เนื้อหารายละเอียดของรูปภาพ]" },
-      { "fileData": { "mimeType": "image/jpeg", "fileUri": imageUrl } }
-    ];
-
-    try {
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: prompt }] }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Gemini API Error:', errorData);
-        throw new Error(`API error: ${response.statusText} - ${errorData?.error?.message || 'Unknown error'}`);
-      }
-
-      const data = await response.json();
-      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (generatedText) {
-        const summaryMatch = generatedText.match(/สรุปย่อ: (.*?)\nเนื้อหารายละเอียด:/s);
-        const detailMatch = generatedText.match(/เนื้อหารายละเอียด: (.*)/s);
-
-        if (summaryMatch?.[1]) setSummary(summaryMatch[1].trim());
-        if (detailMatch?.[1]) setContent(detailMatch[1].trim());
-        if (!summaryMatch?.[1] && !detailMatch?.[1]) setGenerationError('ไม่สามารถแยกแยะเนื้อหาจาก API ได้');
-      } else {
-        setGenerationError('ไม่ได้รับเนื้อหาจาก API');
-      }
-    } catch (error: any) {
-      console.error("Error generating content:", error);
-      setGenerationError(error.message || 'เกิดข้อผิดพลาดในการสร้างเนื้อหา');
-    } finally {
-      setIsGeneratingContent(false);
     }
   };
 
@@ -231,8 +168,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
           <button
             onClick={async () => {
               await supabase.auth.signOut();
-              // setIsAuthenticated(false); // Listener will handle this
-              navigate('/'); // Navigate to home or login page after sign out
+              navigate('/');
             }}
             className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
           >
@@ -272,17 +208,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
               placeholder="https://example.com/image.jpg"
             />
-            <button
-              type="button"
-              onClick={handleGenerateContentFromImage}
-              disabled={isGeneratingContent || !imageUrl}
-              className="mt-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {isGeneratingContent ? 'กำลังสร้างเนื้อหา...' : 'Generate เนื้อหาจากรูปภาพ'}
-            </button>
-            {generationError && (
-              <p className="mt-2 text-sm text-red-600">{generationError}</p>
-            )}
           </div>
           <div>
             <label htmlFor="summary" className="block text-sm font-medium text-brand-gray-darktext">
@@ -366,7 +291,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     </div>
   );
 
-  // --- Main Return based on authentication state ---
   if (!isAuthenticated) {
     return renderLoginForm();
   }
