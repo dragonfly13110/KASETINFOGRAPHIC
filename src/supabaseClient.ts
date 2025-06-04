@@ -1,6 +1,5 @@
-
 import { createClient } from '@supabase/supabase-js';
-import { Infographic } from './types'; // Assuming your Infographic type is defined here
+import { Infographic } from './types';
 
 // ===================================================================================
 // Using your provided Supabase credentials directly for local development.
@@ -10,18 +9,14 @@ const supabaseUrl = 'https://dldiedktrkbwpqznxdwk.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZGllZGt0cmtid3Bxem54ZHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1OTM4ODMsImV4cCI6MjA2NDE2OTg4M30.teFTNA7Zez_qUO9-wQALPdw_ULLmmfNhOlNHD_CdtHc';
 
 if (!supabaseUrl) {
-  throw new Error(
-    `Supabase URL is missing. This should not happen with hardcoded values.`
-  );
+  throw new Error(`Supabase URL is missing.`);
 }
 
 if (!supabaseAnonKey) {
-  throw new Error(
-    `Supabase Anon Key is missing. This should not happen with hardcoded values.`
-  );
+  throw new Error(`Supabase Anon Key is missing.`);
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Define a type for your database schema. This helps with TypeScript type safety.
 // This should align with the table created in your Supabase project.
@@ -43,3 +38,23 @@ export interface Database {
     };
   };
 }
+
+const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const fileName = `${Date.now()}_${file.name}`;
+  const { data, error } = await supabase.storage
+    .from('images')
+    .upload(fileName, file);
+
+  if (error) {
+    console.error('Error uploading image:', error.message);
+    alert(`เกิดข้อผิดพลาดในการอัปโหลดภาพ: ${error.message}`);
+    return;
+  }
+
+  const imageUrl = supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl;
+  setUploadedImageUrl(imageUrl);
+  setImageUrl(imageUrl); // Automatically set the image URL field
+};

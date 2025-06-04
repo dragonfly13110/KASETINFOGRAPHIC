@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../src/supabaseClient';
 import { Infographic, DisplayCategory } from '../src/types';
-import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons';
+import { IconPlusCircle, IconUserCircle, IconLockClosed, IconUpload } from '../components/icons';
 
 interface AdminPageProps {
   onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
@@ -27,6 +27,9 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [tags, setTags] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- New State for Image Upload ---
+  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
 
   useEffect(() => {
     const checkSession = async () => {
@@ -96,6 +99,26 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileName = `${Date.now()}_${file.name}`;
+    const { data, error } = await supabase.storage
+      .from('images') // Replace 'images' with your Supabase bucket name
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Error uploading image:', error.message);
+      alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ');
+      return;
+    }
+
+    const imageUrl = supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl;
+    setUploadedImageUrl(imageUrl);
+    setImageUrl(imageUrl); // Automatically set the image URL field
   };
 
   // --- Render Functions for different views ---
@@ -197,17 +220,31 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
           </div>
           <div>
             <label htmlFor="imageUrl" className="block text-sm font-medium text-brand-gray-darktext">
-              URL รูปภาพ (Image URL) <span className="text-red-500">*</span>
+              URL รูปภาพ (Image URL)
             </label>
             <input
               type="url"
               id="imageUrl"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
               placeholder="https://example.com/image.jpg"
             />
+          </div>
+          <div>
+            <label htmlFor="uploadImage" className="block text-sm font-medium text-brand-gray-darktext">
+              หรืออัปโหลดภาพ
+            </label>
+            <input
+              type="file"
+              id="uploadImage"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
+            />
+            {uploadedImageUrl && (
+              <p className="text-sm text-green-600 mt-2">ภาพถูกอัปโหลดเรียบร้อยแล้ว: {uploadedImageUrl}</p>
+            )}
           </div>
           <div>
             <label htmlFor="summary" className="block text-sm font-medium text-brand-gray-darktext">
