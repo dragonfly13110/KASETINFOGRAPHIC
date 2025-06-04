@@ -43,13 +43,17 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  const fileName = `${Date.now()}_${file.name}`;
+  // Sanitize the original file name to remove or replace invalid characters
+  const originalFileName = file.name;
+  const sanitizedOriginalFileName = originalFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const fileName = `${Date.now()}_${sanitizedOriginalFileName}`;
+
   const { data, error } = await supabase.storage
     .from('images')
     .upload(fileName, file);
 
   if (error) {
-    console.error('Error uploading image:', error.message);
+    console.error('Error uploading image:', error.message); // Keep this for debugging
     alert(`เกิดข้อผิดพลาดในการอัปโหลดภาพ: ${error.message}`);
     return;
   }
