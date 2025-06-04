@@ -28,6 +28,10 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- Gemini Content Generation State ---
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [generationError, setGenerationError] = useState('');
+
  useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -97,6 +101,63 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       alert('เกิดข้อผิดพลาดในการเพิ่มเนื้อหา กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGenerateContentFromImage = async () => {
+    if (!imageUrl) {
+      setGenerationError('กรุณาใส่ URL รูปภาพก่อน');
+      return;
+    }
+    setIsGeneratingContent(true);
+    setGenerationError('');
+    setSummary(''); // Clear previous summary
+    setContent(''); // Clear previous content
+
+    const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    if (!apiKey) {
+      setGenerationError('ไม่พบ API Key ของ Gemini');
+      setIsGeneratingContent(false);
+      return;
+    }
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent?key=${apiKey}`;
+    const prompt = [
+      { "text": "จากรูปภาพนี้ โปรดสร้างคำอธิบายสั้นๆ (สรุปย่อ) และคำอธิบายแบบละเอียด กรุณาจัดรูปแบบผลลัพธ์ดังนี้:\nสรุปย่อ: [สรุปย่อของรูปภาพ]\nเนื้อหารายละเอียด: [เนื้อหารายละเอียดของรูปภาพ]" },
+      { "fileData": { "mimeType": "image/jpeg", "fileUri": imageUrl } }
+    ];
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: prompt }] }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Gemini API Error:', errorData);
+        throw new Error(`API error: ${response.statusText} - ${errorData?.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (generatedText) {
+        const summaryMatch = generatedText.match(/สรุปย่อ: (.*?)\nเนื้อหารายละเอียด:/s);
+        const detailMatch = generatedText.match(/เนื้อหารายละเอียด: (.*)/s);
+
+        if (summaryMatch?.[1]) setSummary(summaryMatch[1].trim());
+        if (detailMatch?.[1]) setContent(detailMatch[1].trim());
+        if (!summaryMatch?.[1] && !detailMatch?.[1]) setGenerationError('ไม่สามารถแยกแยะเนื้อหาจาก API ได้');
+      } else {
+        setGenerationError('ไม่ได้รับเนื้อหาจาก API');
+      }
+    } catch (error: any) {
+      console.error("Error generating content:", error);
+      setGenerationError(error.message || 'เกิดข้อผิดพลาดในการสร้างเนื้อหา');
+    } finally {
+      setIsGeneratingContent(false);
     }
   };
 
@@ -211,6 +272,17 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
               placeholder="https://example.com/image.jpg"
             />
+            <button
+              type="button"
+              onClick={handleGenerateContentFromImage}
+              disabled={isGeneratingContent || !imageUrl}
+              className="mt-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {isGeneratingContent ? 'กำลังสร้างเนื้อหา...' : 'Generate เนื้อหาจากรูปภาพ'}
+            </button>
+            {generationError && (
+              <p className="mt-2 text-sm text-red-600">{generationError}</p>
+            )}
           </div>
           <div>
             <label htmlFor="summary" className="block text-sm font-medium text-brand-gray-darktext">
