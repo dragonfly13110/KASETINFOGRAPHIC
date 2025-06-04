@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, handleImageUpload } from '../src/supabaseClient';
-import { Infographic, DisplayCategory } from '../src/types';
-import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons';
+import { supabase } from '../src/supabaseClient'; // ตรวจสอบว่า supabase client ถูกตั้งค่าอย่างถูกต้อง
+import { Infographic, DisplayCategory } from '../src/types'; // ประเภทข้อมูลที่คุณกำหนด
+import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons'; // ไอคอนของคุณ
+
+// --- Configuration ---
+const IMAGE_BUCKET_NAME = 'images'; // <--- ★★★ ชื่อ Bucket ของคุณ ★★★
 
 interface AdminPageProps {
   onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
@@ -12,34 +15,48 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const navigate = useNavigate();
 
   // --- Authentication State ---
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [inputEmail, setInputEmail] = useState('');
-  const [inputPassword, setInputPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authEmail, setAuthEmail] = useState<string>('');
+  const [authPassword, setAuthPassword] = useState<string>('');
+  const [authError, setAuthError] = useState<string>('');
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
 
   // --- Infographic Form State ---
-  const [title, setTitle] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [content, setContent] = useState('');
-  const [summary, setSummary] = useState('');
+  const [title, setTitle] = useState<string>('');
+  const [externalImageUrl, setExternalImageUrl] = useState<string>(''); // สำหรับวาง URL โดยตรง
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string>(''); // URL จาก Supabase Storage
+  const [summary, setSummary] = useState<string>('');
+  const [content, setContent] = useState<string>('');
   const [displayCategory, setDisplayCategory] = useState<DisplayCategory>(DisplayCategory.INFOGRAPHIC);
-  const [tags, setTags] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tags, setTags] = useState<string>('');
 
-  // --- New State for Image Upload ---
-  const [uploadedImageUrl] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+  const [isSubmittingForm, setIsSubmittingForm] = useState<boolean>(false);
+  const [submitMessage, setSubmitMessage] = useState<string>(''); // สำหรับข้อความสำเร็จหรือข้อผิดพลาดเล็กน้อย
+  const [submitMessageType, setSubmitMessageType] = useState<'success' | 'error' | ''>('');
 
+
+  // Ref สำหรับ file input
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // --- Effects ---
   useEffect(() => {
+    // ตรวจสอบ session เริ่มต้น
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
     };
     checkSession();
 
+    // ฟังการเปลี่ยนแปลงสถานะ auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      if (!session) {
+        resetFormFields();
+        setAuthEmail('');
+        setAuthPassword('');
+      }
     });
 
     return () => {
@@ -47,146 +64,257 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     };
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (submitMessage) {
+      const timer = setTimeout(() => {
+        setSubmitMessage('');
+        setSubmitMessageType('');
+      }, 4000); // แสดงข้อความเป็นเวลา 4 วินาที
+      return () => clearTimeout(timer);
+    }
+  }, [submitMessage]);
+
+
+  // --- Utility Functions ---
+  const resetFormFields = () => {
+    setTitle('');
+    setExternalImageUrl('');
+    setUploadedFile(null);
+    setUploadedFileUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''; // รีเซ็ต file input
+    }
+    setSummary('');
+    setContent('');
+    setDisplayCategory(DisplayCategory.INFOGRAPHIC);
+    setTags('');
+  };
+
+  const showMessage = (message: string, type: 'success' | 'error') => {
+    setSubmitMessage(message);
+    setSubmitMessageType(type);
+  };
+
+  // --- Event Handlers ---
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAuthError('');
     setIsAuthLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: inputEmail,
-        password: inputPassword,
+        email: authEmail,
+        password: authPassword,
       });
       if (error) {
-        setAuthError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
-      } else {
-        setIsAuthenticated(true);
+        setAuthError(error.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       }
-    } catch (error) {
-      setAuthError('เกิดข้อผิดพลาดในการล็อกอิน โปรดลองอีกครั้ง');
+      // setIsAuthenticated(true); // Auth listener จะจัดการส่วนนี้
+    } catch (err: any) {
+      setAuthError(err.message || 'เกิดข้อผิดพลาดในการล็อกอิน โปรดลองอีกครั้ง');
     } finally {
       setIsAuthLoading(false);
     }
   };
 
-  const handleSubmitInfographic = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !imageUrl || !content || !summary) {
-      alert('กรุณากรอกข้อมูลให้ครบทุกช่องที่มีเครื่องหมาย *');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await onAddInfographic({
-        title,
-        imageUrl,
-        content,
-        summary,
-        displayCategory: displayCategory,
-        tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      });
-      // Reset form fields
-      setTitle('');
-      setImageUrl('');
-      setContent('');
-      setSummary('');
-      setDisplayCategory(DisplayCategory.INFOGRAPHIC);
-      setTags('');
-      setIsSubmitted(true);
-      setTimeout(() => setIsSubmitted(false), 3000);
-    } catch (error) {
-      console.error('Failed to add infographic:', error);
-      alert('เกิดข้อผิดพลาดในการเพิ่มเนื้อหา กรุณาลองใหม่อีกครั้ง');
-    } finally {
-      setIsSubmitting(false);
+  const handleLogout = async () => {
+    setAuthError('');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        showMessage(`เกิดข้อผิดพลาดในการออกจากระบบ: ${error.message}`, 'error');
+    } else {
+        navigate('/');
     }
   };
 
-  // --- Render Functions for different views ---
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setUploadedFile(null);
+      return;
+    }
 
-  const renderLoginForm = () => (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl">
-        <h1 className="text-2xl font-bold text-brand-green-dark mb-6 text-center">เข้าสู่ระบบผู้ดูแล</h1>
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-brand-gray-darktext">
-              อีเมล
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <IconUserCircle className="h-5 w-5 text-gray-400" />
+    setUploadedFile(file);
+    setExternalImageUrl(''); // เคลียร์ URL ภายนอกถ้ามีการเลือกไฟล์
+    setIsUploadingImage(true);
+    setUploadedFileUrl(''); // เคลียร์ URL ที่อัปโหลดสำเร็จก่อนหน้าก่อนการพยายามครั้งใหม่
+    showMessage('', ''); // Clear previous messages
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      // เก็บไฟล์ใน subfolder 'public/' ภายใน bucket 'images' ของคุณ
+      // หากคุณไม่มี subfolder 'public' ใน bucket 'images' หรือต้องการเก็บที่ root ให้ใช้ filePath = uniqueFileName;
+      const filePath = `public/${uniqueFileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(IMAGE_BUCKET_NAME) // ใช้ 'images'
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from(IMAGE_BUCKET_NAME) // ใช้ 'images'
+        .getPublicUrl(filePath);
+
+      if (!publicUrlData?.publicUrl) {
+        throw new Error('ไม่สามารถรับ Public URL ของรูปภาพที่อัปโหลดได้');
+      }
+
+      setUploadedFileUrl(publicUrlData.publicUrl);
+      showMessage('อัปโหลดรูปภาพสำเร็จ!', 'success');
+
+    } catch (err: any) {
+      console.error("Image upload error:", err);
+      showMessage(`เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ${err.message}`, 'error');
+      setUploadedFile(null);
+      setUploadedFileUrl('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleRemoveUploadedImage = () => {
+    setUploadedFile(null);
+    setUploadedFileUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    showMessage('ลบรูปภาพที่เลือกแล้ว', 'success');
+  };
+
+  const handleSubmitInfographic = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    showMessage('', ''); // Clear previous messages
+
+    if (!title || !summary || !content || !displayCategory) {
+      showMessage('กรุณากรอกข้อมูลให้ครบทุกช่องที่มีเครื่องหมาย *', 'error');
+      return;
+    }
+
+    if (isUploadingImage) {
+      showMessage('รูปภาพกำลังอัปโหลด กรุณารอสักครู่', 'error');
+      return;
+    }
+
+    setIsSubmittingForm(true);
+
+    try {
+      const finalImageUrl = uploadedFileUrl || externalImageUrl;
+
+      await onAddInfographic({
+        title,
+        imageUrl: finalImageUrl,
+        summary,
+        content,
+        displayCategory,
+        tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+      });
+
+      showMessage('เพิ่มเนื้อหาใหม่เรียบร้อยแล้ว!', 'success');
+      resetFormFields();
+
+    } catch (err: any) {
+      console.error("Error adding infographic:", err);
+      showMessage(`เกิดข้อผิดพลาดในการเพิ่มเนื้อหา: ${err.message}`, 'error');
+    } finally {
+      setIsSubmittingForm(false);
+    }
+  };
+
+  // --- Render Logic ---
+  if (!isAuthenticated) {
+    // Login Form
+    return (
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl">
+          <h1 className="text-2xl font-bold text-brand-green-dark mb-6 text-center">เข้าสู่ระบบผู้ดูแล</h1>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700">อีเมล</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <IconUserCircle className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  id="auth-email"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  required
+                  className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
+                  placeholder="email@example.com"
+                  disabled={isAuthLoading}
+                />
               </div>
-              <input
-                type="email"
-                id="email"
-                value={inputEmail}
-                onChange={(e) => setInputEmail(e.target.value)}
-                required
-                className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
-                placeholder="email@example.com"
-                disabled={isAuthLoading}
-              />
             </div>
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-brand-gray-darktext">
-              รหัสผ่าน
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <IconLockClosed className="h-5 w-5 text-gray-400" />
+            <div>
+              <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <IconLockClosed className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  id="auth-password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  required
+                  className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
+                  placeholder="password"
+                  disabled={isAuthLoading}
+                />
               </div>
-              <input
-                type="password"
-                id="password"
-                value={inputPassword}
-                onChange={(e) => setInputPassword(e.target.value)}
-                required
-                className="focus:ring-brand-green focus:border-brand-green block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
-                placeholder="password"
-                disabled={isAuthLoading}
-              />
             </div>
-          </div>
-          {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-dark disabled:opacity-50"
-              disabled={isAuthLoading}
-            >
-              {isAuthLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
-            </button>
-          </div>
-        </form>
+            {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
+            <div>
+              <button
+                type="submit"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-dark disabled:opacity-50"
+                disabled={isAuthLoading}
+              >
+                {isAuthLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const renderAdminContentForm = () => (
+  // Authenticated View: Content Form
+  return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-brand-green-dark">เพิ่มเนื้อหาใหม่</h1>
           <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate('/');
-            }}
+            onClick={handleLogout}
             className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
           >
             ออกจากระบบ
           </button>
         </div>
 
-        {isSubmitted && (
-          <div className="mb-6 p-4 bg-green-100 text-green-700 border border-green-300 rounded-md">
-            เนื้อหาใหม่ถูกเพิ่มเรียบร้อยแล้ว!
+        {submitMessage && (
+          <div className={`mb-6 p-4 rounded-md text-sm ${
+            submitMessageType === 'success' ? 'bg-green-100 text-green-700 border border-green-300' :
+            submitMessageType === 'error' ? 'bg-red-100 text-red-700 border border-red-300' :
+            'bg-blue-100 text-blue-700 border border-blue-300' // Default/info
+          }`}>
+            {submitMessage}
           </div>
         )}
+
         <form onSubmit={handleSubmitInfographic} className="space-y-6">
+          {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-brand-gray-darktext">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
               หัวข้อ (Title) <span className="text-red-500">*</span>
             </label>
             <input
@@ -198,37 +326,64 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
             />
           </div>
+
+          {/* External Image URL */}
           <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-brand-gray-darktext">
-              URL รูปภาพ (Image URL)
+            <label htmlFor="externalImageUrl" className="block text-sm font-medium text-gray-700">
+              URL รูปภาพ (กรอก URL โดยตรง)
             </label>
             <input
               type="url"
-              id="imageUrl"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
+              id="externalImageUrl"
+              value={externalImageUrl}
+              onChange={(e) => {
+                setExternalImageUrl(e.target.value);
+                if (e.target.value && uploadedFile) handleRemoveUploadedImage();
+              }}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
               placeholder="https://example.com/image.jpg"
+              disabled={isUploadingImage}
             />
           </div>
+
+          {/* Image Upload */}
           <div>
-            <label htmlFor="uploadImage" className="block text-sm font-medium text-brand-gray-darktext">
-              หรืออัปโหลดภาพ
+            <label htmlFor="uploadImage" className="block text-sm font-medium text-gray-700">
+              หรืออัปโหลดภาพ (จาก Bucket: {IMAGE_BUCKET_NAME})
             </label>
             <input
               type="file"
               id="uploadImage"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
+              ref={fileInputRef}
+              accept="image/*,.jpeg,.jpg,.png,.gif,.webp" // ระบุประเภทไฟล์ที่อนุญาต
+              onChange={handleFileChange}
+              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-green-light file:text-brand-green-dark hover:file:bg-brand-green-lighter disabled:opacity-50"
+              disabled={isUploadingImage}
             />
-            {uploadedImageUrl && (
-              <p className="text-sm text-green-600 mt-2">ภาพถูกอัปโหลดเรียบร้อยแล้ว: {uploadedImageUrl}</p>
+            {isUploadingImage && <p className="text-sm text-blue-600 mt-2">กำลังอัปโหลดรูปภาพ...</p>}
+            {uploadedFileUrl && !isUploadingImage && (
+              <div className="mt-2">
+                <p className="text-sm text-green-600">ภาพที่อัปโหลดแล้ว:</p>
+                <img src={uploadedFileUrl} alt="Preview" className="max-h-48 w-auto rounded-md border border-gray-300 my-2 object-contain" />
+                <button
+                  type="button"
+                  onClick={handleRemoveUploadedImage}
+                  className="text-xs text-red-600 hover:text-red-800"
+                  disabled={isUploadingImage}
+                >
+                  ลบภาพที่อัปโหลด
+                </button>
+              </div>
+            )}
+             {!uploadedFileUrl && uploadedFile && !isUploadingImage && (
+                <p className="text-sm text-red-500 mt-2">การอัปโหลดรูปภาพล้มเหลว กรุณาลองอีกครั้ง หรือตรวจสอบ Console</p>
             )}
           </div>
+
+          {/* Summary */}
           <div>
-            <label htmlFor="summary" className="block text-sm font-medium text-brand-gray-darktext">
-              สรุปย่อ (Summary for card) <span className="text-red-500">*</span>
+            <label htmlFor="summary" className="block text-sm font-medium text-gray-700">
+              สรุปย่อ (Summary) <span className="text-red-500">*</span>
             </label>
             <textarea
               id="summary"
@@ -239,8 +394,10 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
             />
           </div>
+
+          {/* Content */}
           <div>
-            <label htmlFor="content" className="block text-sm font-medium text-brand-gray-darktext">
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700">
               เนื้อหา (Content) <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -252,8 +409,10 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
             />
           </div>
+
+          {/* Display Category */}
           <div>
-            <label htmlFor="displayCategory" className="block text-sm font-medium text-brand-gray-darktext">
+            <label htmlFor="displayCategory" className="block text-sm font-medium text-gray-700">
               หมวดหมู่หลัก (Display Category) <span className="text-red-500">*</span>
             </label>
             <select
@@ -268,8 +427,10 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               ))}
             </select>
           </div>
+
+          {/* Tags */}
           <div>
-            <label htmlFor="tags" className="block text-sm font-medium text-brand-gray-darktext">
+            <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
               แท็ก (Tags, คั่นด้วยจุลภาค ",")
             </label>
             <input
@@ -281,38 +442,37 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               placeholder="เช่น พืชไร่, เทคโนโลยี, เกษตรอินทรีย์"
             />
           </div>
-          <div className="flex justify-end pt-2">
+
+          {/* Action Buttons */}
+          <div className="flex justify-end pt-4">
             <button
               type="button"
-              onClick={() => navigate('/')}
-              className="mr-4 px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green"
-              disabled={isSubmitting}
+              onClick={() => {
+                resetFormFields();
+                navigate('/'); // หรือแค่ resetFormFields(); ถ้าต้องการให้อยู่หน้านี้
+              }}
+              className="mr-4 px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green disabled:opacity-50"
+              disabled={isSubmittingForm || isUploadingImage}
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               className="inline-flex items-center justify-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-dark disabled:opacity-50"
-              disabled={isSubmitting}
+              disabled={isSubmittingForm || isUploadingImage}
             >
-              {isSubmitting ? (
+              {isSubmittingForm ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
               ) : (
                 <IconPlusCircle className="mr-2 h-5 w-5" />
               )}
-              {isSubmitting ? 'กำลังเพิ่ม...' : 'เพิ่มเนื้อหา'}
+              {isSubmittingForm ? 'กำลังบันทึก...' : isUploadingImage ? 'รออัปโหลดรูป...' : 'เพิ่มเนื้อหา'}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
-
-  if (!isAuthenticated) {
-    return renderLoginForm();
-  }
-
-  return renderAdminContentForm();
 };
 
 export default AdminPage;
