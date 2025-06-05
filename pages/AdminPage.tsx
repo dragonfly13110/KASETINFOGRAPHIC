@@ -95,6 +95,52 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     setSubmitMessageType(type);
   };
 
+  const handleContentPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardData = event.clipboardData;
+    let textToInsert = '';
+    let useHtmlExtractedUrl = false;
+
+    // 1. ตรวจสอบข้อมูล HTML ใน Clipboard
+    const htmlData = clipboardData.getData('text/html');
+    if (htmlData) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlData;
+      const imgElement = tempDiv.querySelector('img');
+
+      if (imgElement && imgElement.src) {
+        // 2. ตรวจสอบว่าเป็น URL รูปภาพที่สมบูรณ์ (http/https)
+        if (imgElement.src.startsWith('http://') || imgElement.src.startsWith('https://')) {
+          textToInsert = imgElement.src;
+          useHtmlExtractedUrl = true;
+        }
+      }
+    }
+
+    // 3. ถ้าไม่พบ URL จาก HTML หรือไม่ต้องการใช้ ให้ใช้ Plain Text แทน
+    if (!useHtmlExtractedUrl) {
+      const plainTextData = clipboardData.getData('text/plain');
+      if (plainTextData) {
+        textToInsert = plainTextData;
+      }
+    }
+
+    if (textToInsert) {
+      event.preventDefault(); // ป้องกันการวางแบบปกติ
+      const textarea = event.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentValue = textarea.value;
+      const newValue = currentValue.substring(0, start) + textToInsert + currentValue.substring(end);
+      
+      setContent(newValue); // อัปเดต State ของ React
+
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
+      }, 0);
+    }
+    // ถ้า textToInsert ยังคงว่างเปล่า (เช่น Clipboard ว่าง) จะไม่มีการดำเนินการใดๆ และการวางแบบปกติ (ถ้ามี) จะไม่เกิดขึ้นเนื่องจากไม่ได้เรียก preventDefault ในกรณีนอก if
+  };
+
   // --- Event Handlers ---
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -404,6 +450,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onPaste={handleContentPaste} // เพิ่ม onPaste handler
               rows={6}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"

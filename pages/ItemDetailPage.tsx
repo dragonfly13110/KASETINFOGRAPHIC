@@ -11,10 +11,20 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   const item = infographics.find(info => info.id === itemId);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageSrc, setModalImageSrc] = useState<string | null>(null);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const openImageInModal = (src: string | undefined | null) => {
+    if (src) {
+      setModalImageSrc(src);
+      setIsModalOpen(true);
+    }
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalImageSrc(null);
+  };
 
   if (!item) {
     return (
@@ -34,15 +44,27 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
     );
   }
 
+  // Event handler for clicks within the content area
+  const handleContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    // Check if the clicked element is an image with our specific class
+    if (target.tagName === 'IMG' && target.classList.contains('clickable-content-image')) {
+      const imgSrc = (target as HTMLImageElement).src;
+      if (imgSrc) {
+        openImageInModal(imgSrc);
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center">
       <article className="bg-white rounded-lg shadow-xl overflow-hidden inline-block flex flex-col">
         {item.imageUrl && (
           <img
-            className="w-auto h-auto object-contain max-h-[70vh] cursor-pointer"
+            className="w-auto h-auto object-contain max-h-[50vh] cursor-pointer self-center" // Added self-center for main image
             src={item.imageUrl}
             alt={item.title}
-            onClick={openModal}
+            onClick={() => openImageInModal(item.imageUrl)}
             onError={(e) => (e.currentTarget.src = 'https://picsum.photos/800/600?grayscale')}
           />
         )}
@@ -65,9 +87,24 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
             เผยแพร่เมื่อ: {item.date}
           </p>
 
-          <div 
-            className="text-brand-gray-text leading-relaxed space-y-4" 
-            dangerouslySetInnerHTML={{ __html: item.content.replace(/\n/g, '<br />') }} 
+          <div
+            className="text-brand-gray-text leading-relaxed space-y-4 break-words"
+            onClick={handleContentClick} // Added click handler for content images
+            dangerouslySetInnerHTML={{
+              __html: (() => {
+                // 1. เปลี่ยน \n เป็น <br /> เหมือนเดิม
+                let processedContent = item.content.replace(/\n/g, '<br />');
+                // 2. Regex สำหรับค้นหา URL รูปภาพ (png, jpg, jpeg, gif, webp)
+                //    ที่ไม่ใช่ส่วนหนึ่งของ src="..." หรือ href="..." อยู่แล้ว
+                const imageUrlRegex = /(?<!(?:src|href)=["'])(https?:\/\/[^\s<>"']+\.(?:png|jpg|jpeg|gif|webp))\b/gi;
+                processedContent = processedContent.replace(
+                  imageUrlRegex,
+                  (url) =>
+                    `<img src="${url}" alt="Embedded image" class="clickable-content-image" style="max-width: 100%; max-height: 75vh; height: auto; object-fit: contain; display: block; margin-top: 0.5em; margin-bottom: 0.5em; margin-left: auto; margin-right: auto; cursor: pointer;" />`
+                );
+                return processedContent;
+              })(),
+            }}
           />
 
           {item.tags && item.tags.length > 0 && (
@@ -93,9 +130,13 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
           <div className="relative max-w-[90vw] max-h-[90vh]">
             <img
               className="w-auto h-auto max-w-full max-h-[90vh] object-contain"
-              src={item.imageUrl}
-              alt={item.title}
-              onError={(e) => (e.currentTarget.src = 'https://picsum.photos/800/600?grayscale')}
+              src={modalImageSrc || ''}
+              alt={modalImageSrc === item.imageUrl ? item.title : "ภาพขยาย"}
+              onError={(e) => {
+                const imgElement = e.currentTarget;
+                imgElement.src = 'https://picsum.photos/800/600?grayscale';
+                imgElement.alt = 'ไม่สามารถโหลดรูปภาพได้';
+              }}
             />
             <button
               className="absolute top-4 right-4 text-white bg-brand-green hover:bg-brand-green-dark rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-brand-green"
