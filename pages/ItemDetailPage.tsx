@@ -5,15 +5,18 @@ import { IconArrowLeft } from '../components/icons';
 
 interface ItemDetailPageProps {
   infographics: Infographic[];
+  isAdmin: boolean; // เพิ่ม prop สำหรับตรวจสอบสิทธิ์ admin
 }
 
-const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
+const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin }) => {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   const item = infographics.find(info => info.id === itemId);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageSrc, setModalImageSrc] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false); // State สำหรับโหมดแก้ไข
+  const [editedContent, setEditedContent] = useState(item?.content || ''); // เก็บเนื้อหาที่แก้ไข
 
   const openImageInModal = (src: string | undefined | null) => {
     if (src) {
@@ -26,9 +29,31 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
     setModalImageSrc(null);
   };
 
+  const handleSaveChanges = async () => {
+    // เรียก API เพื่ออัปเดตข้อมูล
+    try {
+      const response = await fetch(`/api/infographics/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editedContent }),
+      });
+      if (response.ok) {
+        alert('บันทึกข้อมูลสำเร็จ');
+        setIsEditMode(false);
+        // อัปเดตข้อมูลใน frontend
+        item!.content = editedContent;
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      }
+    } catch (error) {
+      console.error('Error updating content:', error);
+      alert('ไม่สามารถบันทึกข้อมูลได้');
+    }
+  };
+
   if (!item) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center" style={{ minHeight: 'calc(100vh - 10rem)'}}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center" style={{ minHeight: 'calc(100vh - 10rem)' }}>
         <div className="bg-white p-8 rounded-lg shadow-xl inline-block">
           <h1 className="text-3xl font-bold text-brand-gray-darktext mb-4">ไม่พบเนื้อหา</h1>
           <p className="text-brand-gray-text text-lg mt-2 mb-6">ขออภัย ไม่พบเนื้อหาที่คุณกำลังค้นหา (ID: {itemId})</p>
@@ -61,7 +86,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
       <article className="bg-white rounded-lg shadow-xl overflow-hidden inline-block flex flex-col">
         {item.imageUrl && (
           <img
-            className="w-auto h-auto object-contain max-h-[50vh] cursor-pointer self-center" // Added self-center for main image
+            className="w-auto h-auto object-contain max-h-[50vh] cursor-pointer self-center"
             src={item.imageUrl}
             alt={item.title}
             onClick={() => openImageInModal(item.imageUrl)}
@@ -83,37 +108,71 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics }) => {
             </span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-brand-gray-darktext mb-3">{item.title}</h1>
-          <p className="text-sm text-gray-500 mb-6">
-            เผยแพร่เมื่อ: {item.date}
-          </p>
+          <p className="text-sm text-gray-500 mb-6">เผยแพร่เมื่อ: {item.date}</p>
 
-          <div
-            className="text-brand-gray-text leading-relaxed space-y-4 break-words"
-            onClick={handleContentClick} // Added click handler for content images
-            dangerouslySetInnerHTML={{
-              __html: (() => {
-                // 1. เปลี่ยน \n เป็น <br /> เหมือนเดิม
-                let processedContent = item.content.replace(/\n/g, '<br />');
-                // 2. Regex สำหรับค้นหา URL รูปภาพ (png, jpg, jpeg, gif, webp)
-                //    ที่ไม่ใช่ส่วนหนึ่งของ src="..." หรือ href="..." อยู่แล้ว
-                const imageUrlRegex = /(?<!(?:src|href)=["'])(https?:\/\/[^\s<>"']+\.(?:png|jpg|jpeg|gif|webp))\b/gi;
-                processedContent = processedContent.replace(
-                  imageUrlRegex,
-                  (url) =>
-                    `<img src="${url}" alt="Embedded image" class="clickable-content-image" style="max-width: 100%; max-height: 75vh; height: auto; object-fit: contain; display: block; margin-top: 0.5em; margin-bottom: 0.5em; margin-left: auto; margin-right: auto; cursor: pointer;" />`
-                );
-                return processedContent;
-              })(),
-            }}
-          />
+          {isEditMode ? (
+            <textarea
+              className="w-full border border-gray-300 rounded-md p-3"
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+            />
+          ) : (
+            <div
+              className="text-brand-gray-text leading-relaxed space-y-4 break-words"
+              onClick={handleContentClick} // Added click handler for content images
+              dangerouslySetInnerHTML={{
+                __html: (() => {
+                  // 1. เปลี่ยน \n เป็น <br /> เหมือนเดิม
+                  let processedContent = item.content.replace(/\n/g, '<br />');
+                  // 2. Regex สำหรับค้นหา URL รูปภาพ (png, jpg, jpeg, gif, webp)
+                  //    ที่ไม่ใช่ส่วนหนึ่งของ src="..." หรือ href="..." อยู่แล้ว
+                  const imageUrlRegex = /(?<!(?:src|href)=["'])(https?:\/\/[^\s<>"']+\.(?:png|jpg|jpeg|gif|webp))\b/gi;
+                  processedContent = processedContent.replace(
+                    imageUrlRegex,
+                    (url) =>
+                      `<img src="${url}" alt="Embedded image" class="clickable-content-image" style="max-width: 100%; max-height: 75vh; height: auto; object-fit: contain; display: block; margin-top: 0.5em; margin-bottom: 0.5em; margin-left: auto; margin-right: auto; cursor: pointer;" />`
+                  );
+                  return processedContent;
+                })(),
+              }}
+            />
+          )}
+
+          {isAdmin && (
+            <div className="mt-4">
+              {isEditMode ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveChanges}
+                    className="px-4 py-2 bg-brand-green text-white rounded-md"
+                  >
+                    บันทึก
+                  </button>
+                  <button
+                    onClick={() => setIsEditMode(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsEditMode(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                >
+                  แก้ไขเนื้อหา
+                </button>
+              )}
+            </div>
+          )}
 
           {item.tags && item.tags.length > 0 && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-brand-gray-darktext mb-3">แท็กที่เกี่ยวข้อง:</h3>
               <div className="flex flex-wrap gap-2">
                 {item.tags.map(tag => (
-                  <span 
-                    key={tag} 
+                  <span
+                    key={tag}
                     className="bg-gray-200 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full"
                   >
                     #{tag}
