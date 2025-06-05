@@ -8,9 +8,11 @@ import { supabase } from '../src/supabaseClient';  // <--- แก้ไข Path
 // 2. นิยาม Interface ItemDetailPageProps ที่นี่
 interface ItemDetailPageProps {
   isAdmin: boolean;
+  onItemUpdate: (updatedItem: Infographic) => void;
+  reFetchInfographics: () => void;
 }
 
-const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin }) => {
+const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, reFetchInfographics }) => {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
 
@@ -106,8 +108,11 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin }) => {
         console.log('Data updated successfully:', updateData);
         setIsEditMode(false);
         setItem(updateData as Infographic);
+        onItemUpdate(updateData as Infographic);
+        // เรียก re-fetch เพื่อดึงข้อมูลล่าสุด
+        reFetchInfographics();
       } else {
-        alert('ไม่สามารถอัปเดตข้อมูลได้ หรือไม่พบข้อมูลหลังอัปเดต (No data returned)');
+        alert('ไม่สามารถอัปเดตข้อมูลได้ หรือไม่พบข้อมูลหลังอัปเดต');
         console.warn('Update seemed to succeed but no data was returned.', { updateData });
       }
     } catch (err) {
