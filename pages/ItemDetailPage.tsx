@@ -28,6 +28,8 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
   const [editedSummary, setEditedSummary] = useState('');
   // สำหรับ Tags เราจะรับเป็น comma-separated string
   const [editedTags, setEditedTags] = useState('');
+  // เพิ่ม state สำหรับ Image URL
+  const [editedImageUrl, setEditedImageUrl] = useState('');
 
   const fetchItem = useCallback(async () => {
     if (!itemId) {
@@ -48,12 +50,12 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
       if (data) {
         const fetchedItem = data as Infographic;
         setItem(fetchedItem);
-        // ตั้งค่าฟิลด์แก้ไขจากข้อมูลที่ดึงมา
         setEditedTitle(fetchedItem.title || '');
         setEditedContent(fetchedItem.content || '');
         setEditedSummary(fetchedItem.summary || '');
-        // สมมติว่า tags เป็น array ของ string
         setEditedTags(fetchedItem.tags ? fetchedItem.tags.join(', ') : '');
+        // ตั้งค่า Image URL สำหรับแก้ไข
+        setEditedImageUrl(fetchedItem.imageUrl || '');
       } else {
         setError(`ไม่พบเนื้อหา (ID: ${itemId})`);
       }
@@ -102,7 +104,8 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
         title: editedTitle, 
         content: editedContent, 
         summary: editedSummary,
-        tags: tagsArray
+        tags: tagsArray,
+        imageUrl: editedImageUrl   // เพิ่มการอัปเดต imageUrl ด้วย
       };
       console.log('Sending updates to Supabase:', updates);
 
@@ -230,6 +233,15 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
                   onChange={(e) => setEditedContent(e.target.value)}
                 />
               </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Image URL:</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-md p-3" 
+                  value={editedImageUrl}
+                  onChange={(e) => setEditedImageUrl(e.target.value)}
+                />
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveChanges}
@@ -245,6 +257,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
                     setEditedContent(item.content || '');
                     setEditedSummary(item.summary || '');
                     setEditedTags(item.tags ? item.tags.join(', ') : '');
+                    setEditedImageUrl(item.imageUrl || ''); // รีเซ็ต editedImageUrl
                   }}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
                 >
@@ -286,6 +299,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
                 setEditedContent(item.content || '');
                 setEditedSummary(item.summary || '');
                 setEditedTags(item.tags ? item.tags.join(', ') : '');
+                setEditedImageUrl(item.imageUrl || '');
                 setIsEditMode(true);
               }}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
