@@ -133,7 +133,7 @@ const App: React.FC = () => {
             <Route path="/infographics" element={<InfographicsPage infographics={infographics} />} />
             <Route path="/articles" element={<ArticlesPage infographics={infographics} />} />
             <Route path="/technology" element={<TechnologyPage infographics={infographics} />} />
-            <Route path="/item/:itemId" element={<ItemDetailPage infographics={infographics} isAdmin={true} />} />
+            <Route path="/item/:itemId" element={<ItemDetailPage isAdmin={true} />} />
             <Route path="/admin" element={<AdminPage onAddInfographic={addInfographic} />} />
           </Routes>
         </main>
