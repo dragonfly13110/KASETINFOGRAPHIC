@@ -23,7 +23,11 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageSrc, setModalImageSrc] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [editedSummary, setEditedSummary] = useState('');
+  // สำหรับ Tags เราจะรับเป็น comma-separated string
+  const [editedTags, setEditedTags] = useState('');
 
   const fetchItem = useCallback(async () => {
     if (!itemId) {
@@ -42,8 +46,14 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
 
       if (fetchError) throw fetchError;
       if (data) {
-        setItem(data as Infographic); // Cast to Infographic type
-        setEditedContent(data.content || '');
+        const fetchedItem = data as Infographic;
+        setItem(fetchedItem);
+        // ตั้งค่าฟิลด์แก้ไขจากข้อมูลที่ดึงมา
+        setEditedTitle(fetchedItem.title || '');
+        setEditedContent(fetchedItem.content || '');
+        setEditedSummary(fetchedItem.summary || '');
+        // สมมติว่า tags เป็น array ของ string
+        setEditedTags(fetchedItem.tags ? fetchedItem.tags.join(', ') : '');
       } else {
         setError(`ไม่พบเนื้อหา (ID: ${itemId})`);
       }
@@ -79,10 +89,21 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
       return;
     }
     console.log('Attempting to save changes for itemId:', itemId);
+    console.log('Title to be saved:', editedTitle);
     console.log('Content to be saved:', editedContent);
+    console.log('Summary to be saved:', editedSummary);
+    console.log('Tags to be saved:', editedTags);
 
     try {
-      const updates = { content: editedContent };
+      // แปลง editedTags เป็น Array โดยแยกด้วย comma และตัดช่องว่างออก
+      const tagsArray = editedTags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+      // update title, content, summary และ tags
+      const updates = { 
+        title: editedTitle, 
+        content: editedContent, 
+        summary: editedSummary,
+        tags: tagsArray
+      };
       console.log('Sending updates to Supabase:', updates);
 
       const { data: updateData, error: updateError } = await supabase
@@ -173,88 +194,111 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
           />
         )}
         <div className="p-6 md:p-10 max-w-full flex-1 overflow-y-auto">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center text-brand-green hover:text-brand-green-dark font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green rounded-md px-3 py-1 mb-4"
-            aria-label="Go back to previous page"
-          >
-            <IconArrowLeft className="mr-2 h-5 w-5" />
-            กลับ
-          </button>
-          <div className="mb-4">
-            <span className="inline-block bg-brand-green-light text-brand-green-dark text-sm font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
-              {item.displayCategory}
-            </span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-brand-gray-darktext mb-3">{item.title}</h1>
-          <p className="text-sm text-gray-500 mb-6">เผยแพร่เมื่อ: {item.date}</p>
-
-          {isEditMode ? (
-            <textarea
-              className="w-full h-64 border border-gray-300 rounded-md p-3"
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-            />
-          ) : (
-            <div
-              className="text-brand-gray-text leading-relaxed space-y-4 break-words"
-              onClick={handleContentClick} // <--- TS2304: Cannot find name 'handleContentClick' (ตอนนี้ควรจะหาเจอแล้ว)
-              dangerouslySetInnerHTML={{
-                __html: (() => {
-                  let processedContent = item.content?.replace(/\n/g, '<br />') || '';
-                  const imageUrlRegex = /(?<!(?:src|href)=["'])(https?:\/\/[^\s<>"']+\.(?:png|jpg|jpeg|gif|webp))\b/gi;
-                  // 4. กำหนด Type ให้ parameter 'url'
-                  processedContent = processedContent.replace(
-                    imageUrlRegex,
-                    (url: string) => // <--- TS7006: Parameter 'url' implicitly has an 'any' type. (แก้ไข)
-                      `<img src="${url}" alt="Embedded image" class="clickable-content-image" style="max-width: 100%; max-height: 75vh; height: auto; object-fit: contain; display: block; margin-top: 0.5em; margin-bottom: 0.5em; margin-left: auto; margin-right: auto; cursor: pointer;" />`
-                  );
-                  return processedContent;
-                })(),
-              }}
-            />
-          )}
-
-          {isAdmin && (
-            <div className="mt-4">
-              {isEditMode ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveChanges}
-                    className="px-4 py-2 bg-brand-green text-white rounded-md hover:bg-brand-green-dark transition-colors"
-                  >
-                    บันทึก
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditMode(false);
-                      setEditedContent(item.content || '');
-                    }}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
-                  >
-                    ยกเลิก
-                  </button>
-                </div>
-              ) : (
+          {isAdmin && isEditMode ? (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Title:</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-md p-3" 
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Tags (comma-separated):</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded-md p-3" 
+                  value={editedTags}
+                  onChange={(e) => setEditedTags(e.target.value)}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Summary:</label>
+                <textarea
+                  className="w-full h-24 border border-gray-300 rounded-md p-3"
+                  value={editedSummary}
+                  onChange={(e) => setEditedSummary(e.target.value)}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Content:</label>
+                <textarea
+                  className="w-full h-64 border border-gray-300 rounded-md p-3"
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveChanges}
+                  className="px-4 py-2 bg-brand-green text-white rounded-md hover:bg-brand-green-dark transition-colors"
+                >
+                  บันทึก
+                </button>
                 <button
                   onClick={() => {
+                    setIsEditMode(false);
+                    // รีเซ็ตค่า edit fields จากค่าเดิม
+                    setEditedTitle(item.title || '');
                     setEditedContent(item.content || '');
-                    setIsEditMode(true);
+                    setEditedSummary(item.summary || '');
+                    setEditedTags(item.tags ? item.tags.join(', ') : '');
                   }}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
                 >
-                  แก้ไขเนื้อหา
+                  ยกเลิก
                 </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {!isEditMode && item.title && (
+                <h1 className="text-3xl font-bold text-brand-gray-darktext mb-4">{item.title}</h1>
               )}
-            </div>
+              {item.summary && (
+                <p className="text-lg text-brand-gray-darktext mb-4">{item.summary}</p>
+              )}
+              <div
+                className="text-brand-gray-text leading-relaxed space-y-4 break-words"
+                onClick={handleContentClick}
+                dangerouslySetInnerHTML={{
+                  __html: (() => {
+                    let processedContent = item.content?.replace(/\n/g, '<br />') || '';
+                    const imageUrlRegex = /(?<!(?:src|href)=["'])(https?:\/\/[^\s<>"']+\.(?:png|jpg|jpeg|gif|webp))\b/gi;
+                    processedContent = processedContent.replace(
+                      imageUrlRegex,
+                      (url: string) =>
+                        `<img src="${url}" alt="Embedded image" class="clickable-content-image" style="max-width: 100%; max-height: 75vh; height: auto; object-fit: contain; display: block; margin: 0.5em auto; cursor: pointer;" />`
+                    );
+                    return processedContent;
+                  })(),
+                }}
+              />
+            </>
+          )}
+
+          {isAdmin && !isEditMode && (
+            <button
+              onClick={() => {
+                setEditedTitle(item.title || '');
+                setEditedContent(item.content || '');
+                setEditedSummary(item.summary || '');
+                setEditedTags(item.tags ? item.tags.join(', ') : '');
+                setIsEditMode(true);
+              }}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            >
+              แก้ไขเนื้อหา, Summary, Title และ Tags
+            </button>
           )}
 
           {item.tags && item.tags.length > 0 && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-brand-gray-darktext mb-3">แท็กที่เกี่ยวข้อง:</h3>
               <div className="flex flex-wrap gap-2">
-                {/* 5. กำหนด Type ให้ parameter 'tag' */}
-                {item.tags.map((tag: string) => ( // <--- TS7006: Parameter 'tag' implicitly has an 'any' type. (แก้ไข)
+                {item.tags.map((tag: string) => (
                   <span
                     key={tag}
                     className="bg-gray-200 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full"
