@@ -50,7 +50,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
   return (
     <>
       <PageBanner title={pageInfo.title} subtitle={pageInfo.subtitle} showBackButton={showBackButton} />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="mb-6 p-6 bg-white rounded-lg shadow">
           <div className="relative mb-4">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

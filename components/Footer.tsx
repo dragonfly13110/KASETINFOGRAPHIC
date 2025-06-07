@@ -4,7 +4,7 @@ import { FaFacebook } from 'react-icons/fa';
 const Footer: React.FC = () => {
   return (
     <footer className="bg-brand-green-light text-brand-gray-darktext py-10 mt-12 border-t border-brand-green">
-      <div className="container mx-auto px-4 text-center">
+      <div className="w-full px-4 text-center">
         <p className="text-sm mb-3">
           💡 โครงการนี้เป็นพื้นที่ทดลองรวบรวมและนำเสนอความรู้เกษตรในรูปแบบที่เข้าใจง่าย เพื่อสร้างแรงบันดาลใจและพัฒนาแนวทางการเข้าถึงข้อมูลสำหรับเกษตรกร
         </p>

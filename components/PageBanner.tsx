@@ -14,7 +14,7 @@ const PageBanner: React.FC<PageBannerProps> = ({ title, subtitle, showBackButton
 
   return (
     <div className="bg-brand-green-light py-8 px-4 sm:px-6 lg:px-8 mb-8">
-      <div className="container mx-auto">
+      <div className="w-full">
         {showBackButton && (
           <button
             onClick={() => navigate(-1)}
