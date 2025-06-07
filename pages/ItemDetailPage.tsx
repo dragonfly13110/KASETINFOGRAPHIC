@@ -188,10 +188,14 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
   return (
     <>
       <Helmet>
-        <meta property="og:title" content={item.title} />
-        <meta property="og:description" content={item.summary} />
-        <meta property="og:image" content={item.imageUrl} />
-        <meta property="og:url" content={`https://yourdomain.com/item/${item.id}`} />
+        {/* Optional: Improve page title for SEO and browser tab */}
+        <title>{item.title ? `${item.title} - ชื่อเว็บไซต์ของคุณ` : 'ชื่อเว็บไซต์ของคุณ'}</title>
+        <meta property="og:title" content={item.title || 'ดูเนื้อหา'} />
+        <meta property="og:description" content={item.summary || 'รายละเอียดเนื้อหา'} />
+        {/* ★ แก้ไข: ตรวจสอบ item.imageUrl และใส่ URL รูปภาพ Default ของเว็บคุณหาก item.imageUrl ไม่มีค่า */}
+        <meta property="og:image" content={item.imageUrl || 'YOUR_DEFAULT_SITE_IMAGE_URL_HERE'} />
+        <meta property="og:url" content={window.location.href} /> {/* ★ แก้ไข: ใช้ URL ปัจจุบันของหน้าเว็บ */}
+        <meta property="og:type" content="article" /> {/* ★ เพิ่ม: ระบุประเภทเนื้อหา */}
       </Helmet>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center">
         <article className="bg-white rounded-lg shadow-xl overflow-hidden inline-block flex flex-col">
