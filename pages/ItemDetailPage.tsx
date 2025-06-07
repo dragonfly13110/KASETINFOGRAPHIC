@@ -198,7 +198,11 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
         <meta property="og:type" content="article" /> {/* ★ เพิ่ม: ระบุประเภทเนื้อหา */}
       </Helmet>
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 flex justify-center">
-        <article className="bg-white rounded-lg shadow-xl overflow-hidden inline-block flex flex-col">
+        {/* ปรับความกว้างของ article:
+            - w-full: เต็มความกว้างบนจอเล็กถึงกลาง
+            - lg:w-4/5: 80% ของความกว้างบนจอใหญ่ (lg) ขึ้นไป
+            - ลบ inline-block ออก */}
+        <article className="bg-white rounded-lg shadow-xl overflow-hidden w-full lg:w-4/5 flex flex-col">
           {item.imageUrl && (
             <img
               className="w-auto h-auto object-contain max-h-[50vh] cursor-pointer self-center"

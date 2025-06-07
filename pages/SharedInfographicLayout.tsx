@@ -94,7 +94,11 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
             } gap-6`}
             >
               {filteredInfographics.map(info => (
-                <InfographicCard key={info.id} infographic={info} />
+                <InfographicCard
+                  key={info.id}
+                  infographic={info}
+                  customMinHeight={pageType === 'home' ? 'min-h-[380px]' : undefined} // กำหนดความสูงเฉพาะหน้าแรก
+                />
               ))}
             </div>
           ) : (

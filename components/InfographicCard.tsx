@@ -5,13 +5,15 @@ import { Infographic } from '../src/types';
 
 interface InfographicCardProps {
   infographic: Infographic;
+  customMinHeight?: string; // เพิ่ม prop สำหรับกำหนดความสูงขั้นต่ำแบบ custom
 }
 
-const InfographicCard: React.FC<InfographicCardProps> = ({ infographic }) => {
+const InfographicCard: React.FC<InfographicCardProps> = ({ infographic, customMinHeight }) => {
   const navigate = useNavigate(); // Initialize useNavigate
+  const cardMinHeightClass = customMinHeight || "min-h-[420px]"; // ใช้ customMinHeight ถ้ามี, หรือ default เป็น min-h-[420px]
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col min-h-[500px]">
+    <div className={`bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col ${cardMinHeightClass}`}>
       {/* Wrap img with a div or make img itself clickable */}
       <img
         className="w-full h-full object-cover cursor-pointer" // Added cursor-pointer
