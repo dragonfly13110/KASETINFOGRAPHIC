@@ -89,7 +89,10 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
 
         <main className="w-full">
           {filteredInfographics.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${
+              pageType === 'home' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
+            } gap-6`}
+            >
               {filteredInfographics.map(info => (
                 <InfographicCard key={info.id} infographic={info} />
               ))}

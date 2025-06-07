@@ -12,10 +12,15 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col min-h-[500px]">
+      {/* Wrap img with a div or make img itself clickable */}
       <img
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover cursor-pointer" // Added cursor-pointer
         src={infographic.imageUrl || 'https://picsum.photos/600/400?grayscale'}
         alt={infographic.title}
+        onClick={() => {
+          // Navigate to item detail page when image is clicked
+          navigate(`/item/${infographic.id}`);
+        }}
         onError={(e) => (e.currentTarget.src = 'https://picsum.photos/600/400?grayscale')}
       />
       <div className="p-6 flex flex-col flex-grow">
