@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>วิเคราะห์สถานการณ์และแนวทางพัฒนาเกษตรกรรมไทย</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices:
+        - Thai Agri Overview:
+            - GDP Share (Agri/Industry/Service): Pie Chart (Chart.js) - Goal: Inform proportion. Interaction: Tooltips. Justification: Clear visual of agri's economic share.
+            - Agri Land Use (Rice, Field Crops, etc.): Donut Chart (Chart.js) - Goal: Inform distribution. Interaction: Tooltips. Justification: Shows primary land use.
+            - Labor Force Decline (Time Series): Line Chart (Chart.js) - Goal: Show change. Interaction: Tooltips. Justification: Visualizes the trend.
+            - Avg Farmer Income vs. Non-Farmer: Grouped Bar Chart (Chart.js) - Goal: Compare. Interaction: Tooltips. Justification: Highlights income disparity.
+            - Top 5 Agri Exports Value: Bar Chart (Chart.js) - Goal: Compare. Interaction: Tooltips. Justification: Shows key export strengths.
+            - Problems/Opportunities: Styled lists/cards (HTML/Tailwind) - Goal: Inform. Interaction: Readability. Justification: Clear presentation of qualitative info.
+        - International Comparisons:
+            - Comparative Stats Table: HTML Table - Goal: Compare across countries. Interaction: Readability. Justification: Direct comparison of key metrics.
+            - Country Details: Text summaries in tabs (HTML/Tailwind/JS) - Goal: Inform. Interaction: Tab selection. Justification: Organized detailed info.
+        - Development Pathways/Gov Roles/Conclusion: Styled text sections (HTML/Tailwind) - Goal: Inform. Interaction: Readability. Justification: Structured presentation of strategic text.
+        - All text content: Parsed and summarized from report, presented in paragraphs and lists for clarity.
+        - Library/Method: Chart.js for all charts. Vanilla JS for tab navigation and any other simple interactions. Tailwind CSS for all styling. NO SVG/Mermaid. -->
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+            color: #292524; /* stone-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Default max-width */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Default height */
+            max-height: 400px; /* Default max-height */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                 max-height: 450px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+        }
+        .nav-link.active {
+            color: #15803d; /* green-700 */
+            border-bottom: 2px solid #15803d; /* green-700 */
+        }
+        .nav-link:hover {
+            color: #16a34a; /* green-600 */
+        }
+        .tab-button.active {
+            background-color: #15803d; /* green-700 */
+            color: white;
+        }
+        .tab-button {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        h1, h2, h3 {
+            color: #14532d; /* green-800 deeper green for headers */
+        }
+        .section-card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+         .stat-card {
+            background-color: #fafaf9; /* stone-50 */
+            border-left: 4px solid #d97706; /* amber-600 */
+        }
+        .problem-card {
+             background-color: #fffbeb; /* amber-50 */
+             border-left: 4px solid #ef4444; /* red-500 */
+        }
+        .opportunity-card {
+            background-color: #f0fdf4; /* green-50 */
+            border-left: 4px solid #22c55e; /* green-500 */
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-2xl font-bold text-green-700">เกษตรกรรมไทย: สถานการณ์และแนวทางพัฒนา</h1>
+                </div>
+                <nav class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-700 hover:text-green-600 active">ภาพรวม</a>
+                        <a href="#comparison" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-700 hover:text-green-600">บทเรียนจากต่างประเทศ</a>
+                        <a href="#development" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-700 hover:text-green-600">แนวทางการพัฒนา</a>
+                        <a href="#govrole" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-700 hover:text-green-600">บทบาทภาครัฐ</a>
+                        <a href="#conclusion" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-700 hover:text-green-600">สรุปและข้อเสนอแนะ</a>
+                    </div>
+                </nav>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-stone-500 hover:text-green-600 hover:bg-stone-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-stone-700 hover:text-green-600 hover:bg-stone-50 active">ภาพรวม</a>
+                <a href="#comparison" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-stone-700 hover:text-green-600 hover:bg-stone-50">บทเรียนจากต่างประเทศ</a>
+                <a href="#development" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-stone-700 hover:text-green-600 hover:bg-stone-50">แนวทางการพัฒนา</a>
+                <a href="#govrole" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-stone-700 hover:text-green-600 hover:bg-stone-50">บทบาทภาครัฐ</a>
+                <a href="#conclusion" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-stone-700 hover:text-green-600 hover:bg-stone-50">สรุปและข้อเสนอแนะ</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <section id="overview" class="section-card scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-6 text-center">สถานการณ์ปัจจุบันของภาคเกษตรกรรมไทย</h2>
+            <p class="mb-8 text-lg text-stone-700 leading-relaxed text-center max-w-3xl mx-auto">
+                ภาคเกษตรกรรมเป็นรากฐานสำคัญของเศรษฐกิจและสังคมไทยมาอย่างยาวนาน แต่ปัจจุบันกำลังเผชิญกับการเปลี่ยนแปลงและความท้าทายมากมาย ส่วนนี้จะนำเสนอภาพรวมสถานการณ์ปัจจุบันของภาคเกษตรกรรมไทยผ่านข้อมูลสถิติที่สำคัญ เพื่อให้เข้าใจถึงจุดแข็ง จุดอ่อน โอกาส และอุปสรรคในการพัฒนาไปสู่ความยั่งยืน
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="stat-card p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-2 text-amber-700">GDP ภาคเกษตร</h3>
+                    <p class="text-3xl font-bold">8.81%</p>
+                    <p class="text-sm text-stone-600">ของ GDP รวมประเทศ (ปี 2565)</p>
+                    <p class="text-sm text-stone-600 mt-1">มูลค่า 1,531.12 พันล้านบาท</p>
+                </div>
+                <div class="stat-card p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-2 text-amber-700">การเติบโตเฉลี่ย (10 ปี)</h3>
+                    <p class="text-3xl font-bold">+0.5% <span class="text-lg">ต่อปี</span></p>
+                    <p class="text-sm text-stone-600">เทียบกับนอกภาคเกษตร +1.9% ต่อปี</p>
+                </div>
+                <div class="stat-card p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-2 text-amber-700">พื้นที่เกษตรกรรม</h3>
+                    <p class="text-3xl font-bold">142.9 <span class="text-lg">ล้านไร่</span></p>
+                    <p class="text-sm text-stone-600">44.5% ของพื้นที่ประเทศ (ปี 2566)</p>
+                    <p class="text-sm text-stone-600 mt-1">ผู้ถือครอง 8.7 ล้านราย</p>
+                </div>
+                <div class="stat-card p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-2 text-amber-700">อายุเฉลี่ยเกษตรกร</h3>
+                    <p class="text-3xl font-bold">62 ปี</p>
+                    <p class="text-sm text-stone-600">แรงงานลดลง 3.4 ล้านคน (2556-2566)</p>
+                </div>
+                <div class="stat-card p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-2 text-amber-700">รายได้เฉลี่ยเกษตรกร</h3>
+                    <p class="text-3xl font-bold">128,000 <span class="text-lg">บาท/ปี</span></p>
+                    <p class="text-sm text-stone-600">เทียบกับนอกภาคเกษตร 580,000 บาท/ปี</p>
+                </div>
+                <div class="stat-card p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-2 text-amber-700">หนี้สินครัวเรือนเกษตรกร</h3>
+                    <p class="text-3xl font-bold">>90%</p>
+                    <p class="text-sm text-stone-600">มีหนี้สินเฉลี่ย 450,000 บาท/ครัวเรือน</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4 text-center">สัดส่วน GDP ประเทศไทย (ปี 2565)</h3>
+                    <div class="chart-container h-80 md:h-96"><canvas id="gdpShareChart"></canvas></div>
+                    <p class="text-sm text-stone-600 text-center mt-2">แสดงสัดส่วนของภาคเกษตรกรรม อุตสาหกรรม และบริการ ต่อ GDP รวมของประเทศ</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4 text-center">การใช้ประโยชน์ที่ดินเกษตรกรรม</h3>
+                    <div class="chart-container h-80 md:h-96"><canvas id="landUseChart"></canvas></div>
+                     <p class="text-sm text-stone-600 text-center mt-2">แสดงสัดส่วนการปลูกพืชหลักในพื้นที่เกษตรกรรม</p>
+                </div>
+                 <div>
+                    <h3 class="text-2xl font-semibold mb-4 text-center">สินค้าเกษตรส่งออกสำคัญ (9 เดือนแรก ปี 2566)</h3>
+                    <div class="chart-container h-80 md:h-96"><canvas id="exportChart"></canvas></div>
+                     <p class="text-sm text-stone-600 text-center mt-2">แสดงมูลค่าการส่งออกของสินค้าเกษตร 5 อันดับแรก</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4 text-center">เปรียบเทียบรายได้เฉลี่ยต่อปี (ปี 2565)</h3>
+                    <div class="chart-container h-80 md:h-96"><canvas id="incomeComparisonChart"></canvas></div>
+                    <p class="text-sm text-stone-600 text-center mt-2">เปรียบเทียบรายได้เฉลี่ยของแรงงานภาคเกษตรและนอกภาคเกษตร</p>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-10">ปัญหาและความท้าทายหลัก</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="problem-card p-4 rounded-lg shadow">การเปลี่ยนแปลงสภาพภูมิอากาศ (ภัยแล้ง, น้ำท่วม)</div>
+                <div class="problem-card p-4 rounded-lg shadow">การแข่งขันในตลาดโลกสูง</div>
+                <div class="problem-card p-4 rounded-lg shadow">การเข้าถึงเทคโนโลยีจำกัด</div>
+                <div class="problem-card p-4 rounded-lg shadow">ปัญหาความเหลื่อมล้ำและรายได้น้อย</div>
+                <div class="problem-card p-4 rounded-lg shadow">ต้นทุนการผลิตสูง (ปัจจัยการผลิต, แรงงาน, ดอกเบี้ย)</div>
+                <div class="problem-card p-4 rounded-lg shadow">ผลผลิตต่อไร่ต่ำ (การจัดการน้ำ, ดินเสื่อม, ขาดเครื่องจักร)</div>
+                <div class="problem-card p-4 rounded-lg shadow">แรงงานสูงอายุ ขาดแคลนคนรุ่นใหม่</div>
+                <div class="problem-card p-4 rounded-lg shadow">หนี้สินเกษตรกรสูงและเรื้อรัง</div>
+            </div>
+             <p class="text-md text-stone-700 leading-relaxed">ปัญหาเหล่านี้เชื่อมโยงกันซับซ้อน เช่น รายได้ต่ำทำให้ลงทุนเทคโนโลยีไม่ได้ ส่งผลให้ต้นทุนสูง ผลผลิตต่ำ แข่งขันยาก และรายได้ยิ่งต่ำลง การแก้ปัญหาจึงต้องเป็นแบบองค์รวม</p>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-10">โอกาสในการพัฒนา</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="opportunity-card p-4 rounded-lg shadow">เกษตรกรรมยั่งยืน (อินทรีย์, เป็นมิตรต่อสิ่งแวดล้อม)</div>
+                <div class="opportunity-card p-4 rounded-lg shadow">เทคโนโลยีและนวัตเกษตร (AgTech, BioTech, IoT)</div>
+                <div class="opportunity-card p-4 rounded-lg shadow">การตลาดออนไลน์ (เข้าถึงผู้บริโภคโดยตรง)</div>
+                <div class="opportunity-card p-4 rounded-lg shadow">การท่องเที่ยวเชิงเกษตร (สร้างรายได้เสริม)</div>
+            </div>
+            <p class="text-md text-stone-700 leading-relaxed mt-4">การใช้โอกาสเหล่านี้อย่างมีกลยุทธ์เป็นกุญแจสำคัญในการยกระดับภาคเกษตรกรรมไทย สู่การแข่งขันด้านคุณภาพและมูลค่า แทนปริมาณและราคา</p>
+        </section>
+
+        <section id="comparison" class="section-card scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-6 text-center">บทเรียนจากต่างประเทศ: การเปรียบเทียบภาคเกษตรกรรม</h2>
+            <p class="mb-8 text-lg text-stone-700 leading-relaxed text-center max-w-3xl mx-auto">
+                การศึกษาโมเดลการพัฒนาภาคเกษตรของประเทศอื่น ๆ ทั้งที่พัฒนาแล้วและกำลังพัฒนา สามารถให้บทเรียนที่มีค่าสำหรับการกำหนดทิศทางของประเทศไทย ส่วนนี้จะเปรียบเทียบนโยบาย เทคโนโลยีเด่น และความท้าทายของประเทศตัวอย่าง เพื่อหาแนวทางปรับใช้ที่เหมาะสม
+            </p>
+
+            <div class="mb-8">
+                <div class="flex flex-wrap justify-center border-b border-stone-300">
+                    <button class="tab-button text-lg py-2 px-4 font-semibold text-stone-600 hover:text-green-600 focus:outline-none active" data-tab="netherlands">เนเธอร์แลนด์</button>
+                    <button class="tab-button text-lg py-2 px-4 font-semibold text-stone-600 hover:text-green-600 focus:outline-none" data-tab="israel">อิสราเอล</button>
+                    <button class="tab-button text-lg py-2 px-4 font-semibold text-stone-600 hover:text-green-600 focus:outline-none" data-tab="vietnam">เวียดนาม</button>
+                    <button class="tab-button text-lg py-2 px-4 font-semibold text-stone-600 hover:text-green-600 focus:outline-none" data-tab="malaysia">มาเลเซีย</button>
+                </div>
+            </div>
+
+            <div id="tab-content" class="mt-6">
+                <div id="netherlands" class="tab-pane active">
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">เนเธอร์แลนด์ (ประเทศพัฒนาแล้ว)</h3>
+                    <p class="mb-2"><strong>จุดเด่น:</strong> ผู้นำ AgTech, ลงทุน R&D สูง (เกือบ 1 พันล้านยูโร/ปี), เกษตรในโรงเรือนอัจฉริยะ, ฟาร์มแม่นยำสูง, AI และหุ่นยนต์, เศรษฐกิจเกษตรหมุนเวียน, ผลผลิตต่อเฮกตาร์สูงสุดในโลก</p>
+                    <p class="mb-2"><strong>เทคโนโลยี/นโยบายเด่น:</strong> Smart Greenhouses (เป้าหมายอิสระจากมนุษย์ปี 2573), Room for the River (จัดการน้ำท่วม), ลดการปล่อยไนโตรเจน, Wageningen University & Research (WUR) เป็นศูนย์กลาง R&D</p>
+                    <p class="mb-2"><strong>บทเรียนสำหรับไทย:</strong> เปลี่ยนจากเกษตรเน้นที่ดินสู่เน้นความรู้และเทคโนโลยี, ลงทุน R&D และโครงสร้างพื้นฐานเกษตรอัจฉริยะ, พัฒนาบุคลากร AgTech</p>
+                    <p class="mb-2"><strong>ความท้าทายของเนเธอร์แลนด์:</strong> ราคาพลังงานสูง, การปล่อยไนโตรเจน, ขาดแคลนแรงงาน</p>
+                </div>
+                <div id="israel" class="tab-pane hidden">
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">อิสราเอล (ประเทศพัฒนาแล้ว)</h3>
+                    <p class="mb-2"><strong>จุดเด่น:</strong> นวัตกรรมจัดการน้ำ (รีไซเคิลน้ำเสีย >86% สูงสุดในโลก, ผลิตน้ำจืดจากทะเล), เทคโนโลยีน้ำหยด, ระบบนิเวศ AgTech แข็งแกร่ง (บริษัท AgTech >500 แห่ง)</p>
+                    <p class="mb-2"><strong>เทคโนโลยี/นโยบายเด่น:</strong> Drip Irrigation (เพิ่มประสิทธิภาพใช้น้ำ 70-80%), Desalination (เป้าหมาย 1.1 พันล้าน ลบ.ม. ปี 2573), ระบบกรองน้ำขั้นสูง, ตรวจจับน้ำรั่ว</p>
+                    <p class="mb-2"><strong>บทเรียนสำหรับไทย:</strong> ลงทุนเทคโนโลยีประหยัดน้ำ, ชลประทานประสิทธิภาพสูง, บำบัดน้ำเสียกลับมาใช้, ส่งเสริมสตาร์ทอัพ AgTech</p>
+                     <p class="mb-2"><strong>ความท้าทายของอิสราเอล:</strong> การเข้าถึงทรัพยากรน้ำจำกัด (แม้จะมีเทคโนโลยี)</p>
+                </div>
+                <div id="vietnam" class="tab-pane hidden">
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">เวียดนาม (ประเทศกำลังพัฒนา)</h3>
+                    <p class="mb-2"><strong>จุดเด่น:</strong> เปลี่ยนจาก "การผลิตเกษตร" สู่ "เศรษฐกิจเกษตร", วิสัยทัศน์ผู้นำเกษตรยั่งยืนระดับโลกปี 2593, เน้นเกษตรนิเวศและอินทรีย์, ลดใช้สารเคมี</p>
+                    <p class="mb-2"><strong>เทคโนโลยี/นโยบายเด่น:</strong> ปรับตัวต่อภูมิอากาศ (ไฟ LED, น้ำหยด, อบแห้งแสงอาทิตย์), Digital Transformation (Carbon Footprint Tracking, QR Code ตรวจสอบย้อนกลับ), เชื่อมโยงห่วงโซ่คุณค่า, เข้าถึงตลาดพรีเมียม</p>
+                    <p class="mb-2"><strong>บทเรียนสำหรับไทย:</strong> ใช้แนวปฏิบัติยั่งยืนและเครื่องมือดิจิทัล, บูรณาการเกษตรกรรายย่อยเข้าสู่ห่วงโซ่มูลค่าสูง, เน้น "เศรษฐกิจการเกษตร" (แปรรูป, ตลาด, แบรนด์)</p>
+                    <p class="mb-2"><strong>ความท้าทายของเวียดนาม:</strong> ที่ดินจำกัด, โครงสร้างพื้นฐานไม่ดี, ผลิตภาพต่ำ, ขาดการเข้าถึงสินเชื่อ/ความรู้</p>
+                </div>
+                <div id="malaysia" class="tab-pane hidden">
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">มาเลเซีย (ประเทศกำลังพัฒนา)</h3>
+                    <p class="mb-2"><strong>จุดเด่น:</strong> นโยบาย NAP 2.0 (เกษตรยั่งยืน, ยืดหยุ่น, ขับเคลื่อนด้วยเทคโนโลยี), เน้นเกษตรอัจฉริยะ, R&D&C&I</p>
+                    <p class="mb-2"><strong>เทคโนโลยี/นโยบายเด่น:</strong> เพิ่มการใช้เครื่องจักรกลสมัยใหม่, ช่วยเหลือ SMEs ลงทุนเทคโนโลยี, เร่ง R&D</p>
+                    <p class="mb-2"><strong>บทเรียนสำหรับไทย:</strong> การนำนโยบายไปปฏิบัติจริงในกลุ่มเกษตรกรรายย่อยสำคัญ, ต้องการความช่วยเหลือทางการเงินตรงเป้า, บริการส่งเสริมที่แข็งแกร่ง, เทคโนโลยีที่เหมาะสมกับรายย่อย, สร้างแรงจูงใจดึงดูด FDI ภาคเกษตร</p>
+                    <p class="mb-2"><strong>ความท้าทายของมาเลเซีย:</strong> การนำเครื่องจักรมาใช้ในรายย่อยยังต่ำ, พึ่งพาการนำเข้าอาหารเพิ่ม, FDI ภาคเกษตรต่ำ (1.5% ปี 2564)</p>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-10 text-center">ตารางเปรียบเทียบตัวชี้วัดสำคัญและนโยบายเกษตร</h3>
+            <div class="overflow-x-auto bg-white p-4 rounded-lg shadow">
+                <table class="min-w-full divide-y divide-stone-200">
+                    <thead class="bg-stone-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">ตัวชี้วัด</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">ไทย</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">เนเธอร์แลนด์</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">อิสราเอล</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">เวียดนาม</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">มาเลเซีย</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-stone-200">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">สัดส่วน GDP ภาคเกษตร (%)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">8.81% (2565)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">ผู้นำ AgTech</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">~2-3% (แต่มีมูลค่าสูง)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">เป้า 2.5-3% ต่อปี (2573)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">~7-8%</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">ผลผลิตต่อไร่ (ข้าว)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">494.55 กก./ไร่</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">สูงสุดต่อเฮกตาร์ (ไม่เน้นข้าว)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">เพิ่มขึ้นด้วยเทคโนโลยี</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">เพิ่มผลิตภาพ</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">เพิ่มผลิตภาพ</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">การลงทุน R&D ภาคเกษตร</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">ยังจำกัด</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">~1 พันล้านยูโร/ปี</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">550 ล้าน USD ใน AgTech (2563)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">เน้นพัฒนาเทคโนโลยีใหม่</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">ต่ำ (1.5% FDI รวมปี 64)</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm font-medium text-stone-900">นโยบาย/เทคโนโลยีเด่น</td>
+                            <td class="px-6 py-4 text-sm text-stone-500">BCG Model, Smart Farm, Agri-Map</td>
+                            <td class="px-6 py-4 text-sm text-stone-500">Smart Agri, โรงเรือน AI, Room for the River</td>
+                            <td class="px-6 py-4 text-sm text-stone-500">จัดการน้ำ (น้ำหยด, รีไซเคิล, Desalination)</td>
+                            <td class="px-6 py-4 text-sm text-stone-500">เกษตรยั่งยืน, เกษตรนิเวศ, Carbon Tracking</td>
+                            <td class="px-6 py-4 text-sm text-stone-500">NAP 2.0, Smart Agri, R&D&C&I</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+             <p class="text-md text-stone-700 leading-relaxed mt-4">การเปรียบเทียบนี้ชี้ว่าไทยยังเผชิญความท้าทายพื้นฐาน ขณะที่ประเทศพัฒนาแล้วมุ่งเน้นเทคโนโลยีและนวัตกรรม ส่วนประเทศกำลังพัฒนาก็มุ่งสู่ความยั่งยืนและเพิ่มมูลค่า นี่คือบทเรียนสำคัญสำหรับไทย</p>
+        </section>
+
+        <section id="development" class="section-card scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-6 text-center">แนวทางการพัฒนาภาคเกษตรกรรมไทย</h2>
+            <p class="mb-8 text-lg text-stone-700 leading-relaxed text-center max-w-3xl mx-auto">
+                เพื่อให้ภาคเกษตรกรรมไทยก้าวข้ามข้อจำกัดและเติบโตอย่างยั่งยืน จำเป็นต้องมีแนวทางที่ครอบคลุมและเหมาะสมกับบริบทของประเทศ โดยบูรณาการบทเรียนจากต่างประเทศเข้ากับจุดแข็งและโอกาสของไทย ส่วนนี้จะนำเสนอแนวทางหลัก ๆ ในการพัฒนา
+            </p>
+            <div class="space-y-8">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">1. การยกระดับผลิตภาพและลดต้นทุนการผลิต</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>ส่งเสริมเกษตรแม่นยำสูง (โดรน, AI, IoT) และแอปพลิเคชัน (LDD Soil Guide, Agri-Map)</li>
+                        <li>จัดการน้ำอย่างมีประสิทธิภาพ (ระบบน้ำหยด, เพิ่มแหล่งน้ำ, นาเปียกสลับแห้ง)</li>
+                        <li>ปรับปรุงสุขภาพดิน (ใช้ปุ๋ยตามค่าวิเคราะห์ดิน) และใช้เมล็ดพันธุ์คุณภาพ</li>
+                        <li>สนับสนุนเครื่องจักรกลสำหรับรายย่อย และเครือข่ายบริการเครื่องจักร (Sharing Economy)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">2. การเพิ่มมูลค่าสินค้าเกษตร</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>บูรณาการโมเดลเศรษฐกิจ BCG (Bio-Circular-Green Economy) อย่างเต็มรูปแบบ</li>
+                        <li>ส่งเสริมการแปรรูปสินค้าเกษตร สร้างผลิตภัณฑ์มูลค่าสูง และสินค้า GI</li>
+                        <li>สนับสนุนมาตรฐานคุณภาพและความปลอดภัย (GAP, เกษตรอินทรีย์)</li>
+                        <li>ส่งเสริมการทำคาร์บอนเครดิต (เช่น งดเผา) เพื่อสร้างรายได้และความยั่งยืน</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">3. การพัฒนาเกษตรกรสู่การเป็นผู้ประกอบการ</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>แก้ไขปัญหาหนี้สิน และอำนวยความสะดวกในการเข้าถึงแหล่งทุนดอกเบี้ยต่ำ</li>
+                        <li>พัฒนาทักษะธุรกิจ การตลาด และการขายตรง (โดยเฉพาะออนไลน์)</li>
+                        <li>เสริมสร้างความเข้มแข็งขององค์กรเกษตรกร (กลุ่มเกษตรกร, วิสาหกิจชุมชน)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">4. การจัดการทรัพยากรอย่างยั่งยืนและรับมือการเปลี่ยนแปลงสภาพภูมิอากาศ</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>ส่งเสริมเทคนิคเพาะปลูกและพันธุ์พืชที่ยืดหยุ่นต่อสภาพภูมิอากาศ</li>
+                        <li>ฟื้นฟูระบบนิเวศ (พื้นที่ชุ่มน้ำ, ป่าต้นน้ำ)</li>
+                        <li>สนับสนุนการใช้ประโยชน์จากของเสียทางการเกษตร (พลังงานชีวมวล, ผลิตภัณฑ์มูลค่าเพิ่ม)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">5. การส่งเสริมการตลาดและช่องทางการจำหน่าย</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>พัฒนาและส่งเสริมแพลตฟอร์มอีคอมเมิร์ซสำหรับการขายตรง</li>
+                        <li>เสริมสร้างความเชื่อมโยงตลาดในประเทศและส่งออก</li>
+                        <li>พัฒนาและส่งเสริมมาตรฐานสินค้าเกษตรเพื่อเพิ่มมูลค่า (โดยเฉพาะส่งออก)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-3 text-green-700">6. การดึงดูดแรงงานรุ่นใหม่เข้าสู่ภาคเกษตร</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>ปรับปรุงรายได้และคุณภาพชีวิตของเกษตรกรให้ดีขึ้นอย่างมีนัยสำคัญ</li>
+                        <li>นำเสนอภาพลักษณ์เกษตรกรรมที่ทันสมัย ขับเคลื่อนด้วยเทคโนโลยีและนวัตกรรม</li>
+                        <li>เน้นโอกาสในการเป็นผู้ประกอบการและการสร้างมูลค่าเพิ่ม</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="govrole" class="section-card scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-6 text-center">บทบาทและการปรับตัวของหน่วยงานภาครัฐ</h2>
+            <p class="mb-8 text-lg text-stone-700 leading-relaxed text-center max-w-3xl mx-auto">
+                การขับเคลื่อนภาคเกษตรกรรมไทยไปสู่ความยั่งยืนและมูลค่าเพิ่ม จำเป็นต้องมีการปรับบทบาทและภารกิจของหน่วยงานส่งเสริมการเกษตรในทุกระดับ โดยเฉพาะกรมส่งเสริมการเกษตรและเกษตรตำบล เพื่อให้สามารถตอบสนองต่อความท้าทายและโอกาสในปัจจุบันได้อย่างมีประสิทธิภาพ
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4 text-green-700">กรมส่งเสริมการเกษตร (DOAE)</h3>
+                    <p class="mb-2"><strong>บทบาทปัจจุบัน:</strong> ส่งเสริมและพัฒนาเกษตรกร, องค์กรเกษตรกร, วิสาหกิจชุมชน, ถ่ายทอดเทคโนโลยี, วิจัยและพัฒนางานส่งเสริมการเกษตร</p>
+                    <p class="font-semibold text-amber-700 mt-3 mb-1">การปรับบทบาทสู่ "ผู้ขับเคลื่อนนวัตกรรมและเทคโนโลยี":</p>
+                    <ul class="list-disc list-inside space-y-1 text-stone-700">
+                        <li>เปลี่ยนจากการให้คำแนะนำพื้นฐาน สู่การขับเคลื่อนนวัตกรรมและเทคโนโลยีเชิงรุก</li>
+                        <li>เชื่อมโยงงานวิจัยและพัฒนา (R&D) สู่การใช้ประโยชน์จริง</li>
+                        <li>บูรณาการแพลตฟอร์มดิจิทัลและฐานข้อมูล (Agri-Map, LDD Soil Guide)</li>
+                        <li>อำนวยความสะดวกในการเข้าถึงแหล่งเงินทุนและตลาด</li>
+                        <li>เป็นผู้ประสานงานหลักระหว่างหน่วยงานภาครัฐ เอกชน และสถาบันวิจัย</li>
+                        <li>พัฒนาทักษะเจ้าหน้าที่และเกษตรกรด้านเทคโนโลยีสมัยใหม่และธุรกิจ</li>
+                    </ul>
+                     <p class="mt-3 text-sm text-stone-600">การเปลี่ยนบทบาทนี้จะช่วยให้กรมฯ สามารถเสริมสร้างศักยภาพเกษตรกรให้ก้าวขึ้นสู่ห่วงโซ่คุณค่า และทำให้ภาคเกษตรมีความยืดหยุ่นและน่าดึงดูดใจสำหรับคนรุ่นใหม่</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4 text-green-700">เกษตรตำบล</h3>
+                    <p class="mb-2"><strong>บทบาทปัจจุบัน:</strong> ถ่ายทอดความรู้, สำรวจข้อมูล, จัดทำแผนพัฒนาระดับตำบล, ให้บริการข้อมูล, ช่วยเหลือผู้ประสบภัย, รวมกลุ่มเกษตรกร</p>
+                    <p class="font-semibold text-amber-700 mt-3 mb-1">การปรับบทบาทสู่ "ที่ปรึกษาและผู้ประสานงานเทคโนโลยี":</p>
+                    <ul class="list-disc list-inside space-y-1 text-stone-700">
+                        <li>เพิ่มพูนความเชี่ยวชาญทางเทคนิค (เกษตรอัจฉริยะ, เกษตรแม่นยำ)</li>
+                        <li>อำนวยความสะดวกในการนำเทคโนโลยีมาใช้ในฟาร์ม (โดรน, เซ็นเซอร์, แอป)</li>
+                        <li>เสริมสร้างความเข้มแข็งวิสาหกิจชุมชน (เน้นมูลค่าเพิ่ม, มาตรฐาน, ตลาด)</li>
+                        <li>เป็นศูนย์กลางข้อมูลท้องถิ่นและผู้แก้ไขปัญหา</li>
+                        <li>กระชับความร่วมมือกับ อปท. และผู้นำเกษตรกร</li>
+                    </ul>
+                    <p class="mt-3 text-sm text-stone-600">การปรับบทบาทนี้จะช่วยเชื่อมโยงนโยบายระดับชาติกับการปฏิบัติในพื้นที่จริง ทำให้เกษตรกรรายย่อยไม่ถูกทอดทิ้งในกระบวนการปรับปรุงให้ทันสมัย</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="section-card scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-6 text-center">สรุปและข้อเสนอแนะเชิงนโยบาย</h2>
+             <p class="mb-8 text-lg text-stone-700 leading-relaxed text-center max-w-3xl mx-auto">
+                ภาคเกษตรกรรมไทยเผชิญความท้าทายหลายด้าน แต่ยังมีศักยภาพในการพัฒนาสูง การเรียนรู้จากต่างประเทศและการปรับกลยุทธ์ที่เหมาะสมกับบริบทไทยเป็นสิ่งจำเป็นเพื่อพลิกโฉมภาคเกษตรสู่ความยั่งยืนและสามารถแข่งขันได้ในระยะยาว
+            </p>
+            <h3 class="text-2xl font-semibold mb-4 text-green-700">สรุปประเด็นสำคัญ</h3>
+            <p class="mb-4 text-stone-700">ภาคเกษตรไทยมีส่วนร่วมทางเศรษฐกิจต่ำลง, เกษตรกรมีหนี้สินสูง รายได้ซบเซา, ขาดแคลนแรงงานรุ่นใหม่, เปราะบางต่อสภาพภูมิอากาศและการแข่งขัน, ต้นทุนสูง ผลผลิตต่ำ แต่ก็มีโอกาสด้านการเพิ่มมูลค่า, เกษตรยั่งยืน, และเทคโนโลยี</p>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-6 text-green-700">ข้อเสนอแนะเชิงนโยบาย</h3>
+            <ul class="list-decimal list-inside space-y-3 text-stone-700">
+                <li><strong>ลงทุนในเกษตรอัจฉริยะและการวิจัยและพัฒนา (R&D):</strong> จัดสรรงบประมาณเพิ่ม, ให้สิ่งจูงใจเกษตรกรนำเทคโนโลยีมาใช้</li>
+                <li><strong>กลยุทธ์การจัดการน้ำแบบองค์รวม:</strong> ดำเนินแผนแม่บทระดับชาติ, ลงทุนโครงสร้างพื้นฐานน้ำชุมชน</li>
+                <li><strong>ส่งเสริมการเพิ่มมูลค่าและโมเดล BCG:</strong> สนับสนุนสินค้ามูลค่าสูง, แปรรูป, แบรนด์, มาตรฐานสากล, คาร์บอนเครดิต</li>
+                <li><strong>เสริมสร้างศักยภาพเกษตรกรและการพัฒนาผู้ประกอบการ:</strong> พัฒนาทักษะการเงิน ธุรกิจ ตลาด, อำนวยความสะดวกเข้าถึงสินเชื่อและตลาดตรง</li>
+                <li><strong>ปฏิรูปบริการส่งเสริมการเกษตร:</strong>
+                    <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                        <li><strong>กรมส่งเสริมการเกษตร:</strong> เป็น "ผู้ขับเคลื่อนนวัตกรรมและเทคโนโลยี"</li>
+                        <li><strong>เกษตรตำบล:</strong> เป็น "ที่ปรึกษาและผู้ประสานงานเทคโนโลยี" ระดับรากหญ้า</li>
+                    </ul>
+                </li>
+                <li><strong>ดึงดูดแรงงานรุ่นใหม่:</strong> ทำให้เกษตรเป็นอาชีพน่าดึงดูดทางเศรษฐกิจและเทคโนโลยี, ลงทุนการศึกษาเกษตรสมัยใหม่</li>
+            </ul>
+            <p class="mt-6 text-md text-stone-700 font-semibold">การดำเนินการตามข้อเสนอแนะเหล่านี้อย่างจริงจังและต่อเนื่อง จะเป็นรากฐานสำคัญในการพลิกโฉมภาคเกษตรกรรมไทยให้เข้มแข็ง ยั่งยืน และแข่งขันได้ พร้อมยกระดับคุณภาพชีวิตเกษตรกรไทย</p>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-800 text-stone-300 py-8 text-center">
+        <p>&copy; 2024 รายงานวิเคราะห์สถานการณ์และแนวทางการพัฒนาภาคเกษตรกรรมไทย</p>
+        <p class="text-sm">จัดทำเพื่อการศึกษาและแสดงข้อมูลเชิงโต้ตอบ</p>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenuButton.querySelectorAll('svg').forEach(icon => icon.classList.toggle('hidden'));
+        });
+
+        // Smooth scrolling and active nav link highlighting
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                // For mobile menu, close it after click
+                if (mobileMenu.classList.contains('block') || !mobileMenu.classList.contains('hidden')) {
+                     mobileMenu.classList.add('hidden');
+                     mobileMenuButton.querySelectorAll('svg')[0].classList.remove('hidden');
+                     mobileMenuButton.querySelectorAll('svg')[1].classList.add('hidden');
+                }
+
+                // Smooth scroll for non-mobile menu items or if it's a direct link click
+                if (link.hash !== "") {
+                    e.preventDefault();
+                    const hash = link.hash;
+                    const targetElement = document.querySelector(hash);
+                    if (targetElement) {
+                         const headerOffset = document.querySelector('header').offsetHeight;
+                         const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                         const offsetPosition = elementPosition - headerOffset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: "smooth"
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Active link highlighting on scroll
+        const sections = document.querySelectorAll('section');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const headerHeight = document.querySelector('header').offsetHeight;
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - headerHeight - 5; // 5px buffer
+                if (pageYOffset >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').substring(1) === current) {
+                    link.classList.add('active');
+                }
+            });
+             // Default to 'overview' if no section is explicitly current (e.g., at the very top)
+            if (current === '' && pageYOffset < sections[0].offsetTop - headerHeight - 5) {
+                document.querySelector('a[href="#overview"]').classList.add('active');
+            }
+        });
+
+
+        // Tab functionality for international comparison
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                tabPanes.forEach(pane => {
+                    if (pane.id === targetTab) {
+                        pane.classList.remove('hidden');
+                        pane.classList.add('active');
+                    } else {
+                        pane.classList.add('hidden');
+                        pane.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        // Chart.js implementations
+        constnikiemLightGreen = 'rgba(34, 197, 94, 0.2)'; // green-500 with opacity
+        const nikemGreen = 'rgba(22, 163, 74, 1)'; // green-600
+        const nikemDarkGreen = 'rgba(21, 128, 61, 1)'; // green-700
+        const nikemAmber = 'rgba(217, 119, 6, 1)'; // amber-600
+        const nikemLightAmber = 'rgba(245, 158, 11, 0.2)'; // amber-500 with opacity
+        const nikemStone = 'rgba(120, 113, 108, 1)'; // stone-500
+        const nikemLightStone = 'rgba(168, 162, 158, 0.2)'; // stone-400 with opacity
+
+
+        // 1. GDP Share Chart
+        const gdpShareCtx = document.getElementById('gdpShareChart').getContext('2d');
+        new Chart(gdpShareCtx, {
+            type: 'pie',
+            data: {
+                labels: ['ภาคเกษตรกรรม (8.81%)', 'ภาคอุตสาหกรรม (32.48%)', 'ภาคบริการ (58.71%)'],
+                datasets: [{
+                    label: 'สัดส่วน GDP',
+                    data: [8.81, 32.48, 58.71],
+                    backgroundColor: [nikemGreen, nikemAmber, nikemStone],
+                    borderColor: ['#FFFFFF'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false,
+                    },
+                    legend: {
+                        position: 'bottom',
+                         labels: {
+                            font: { family: 'Sarabun', size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed.toFixed(2) + '%';
+                                }
+                                return label;
+                            }
+                        },
+                        bodyFont: { family: 'Sarabun', size: 12 },
+                        titleFont: { family: 'Sarabun', size: 14 }
+                    }
+                }
+            }
+        });
+
+        // 2. Land Use Chart
+        const landUseCtx = document.getElementById('landUseChart').getContext('2d');
+        new Chart(landUseCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['ข้าว (46.2%)', 'พืชไร่ (23.4%)', 'ยางพารา (17.4%)', 'อื่น ๆ (ปศุสัตว์,ผัก,ป่า) (13%)'], // Adjusted "Other" based on subtraction from 100
+                datasets: [{
+                    label: 'การใช้ประโยชน์ที่ดิน',
+                    data: [46.2, 23.4, 17.4, 13.0], // 100 - 46.2 - 23.4 - 17.4 = 13
+                    backgroundColor: [nikemGreen, nikemAmber, nikemStone, nikemDarkGreen],
+                    borderColor: ['#FFFFFF'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false,
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: 'Sarabun', size: 12 },
+                             padding: 15,
+                             boxWidth: 15
+                        }
+                    },
+                     tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed.toFixed(1) + '%';
+                                }
+                                return label;
+                            }
+                        },
+                        bodyFont: { family: 'Sarabun', size: 12 },
+                        titleFont: { family: 'Sarabun', size: 14 }
+                    }
+                },
+                cutout: '50%'
+            }
+        });
+
+        // 3. Export Chart
+        const exportCtx = document.getElementById('exportChart').getContext('2d');
+        new Chart(exportCtx, {
+            type: 'bar',
+            data: {
+                labels: ['ผลไม้', 'ข้าว', 'ผลิตภัณฑ์มันสำปะหลัง', 'ยางพารา', 'ผัก'],
+                datasets: [{
+                    label: 'มูลค่าส่งออก (ล้าน USD)',
+                    data: [6092.26, 3443.25, 2907.25, 2636.31, 244.63],
+                    backgroundColor: [
+                        nikemGreen,
+                        nikemDarkGreen,
+                        nikemAmber,
+                        nikemStone,
+                        'rgba(20, 83, 45, 1)' // green-900
+                    ],
+                    borderColor: [
+                        nikemDarkGreen,
+                        nikemGreen,
+                        'rgba(180, 83, 9, 1)', // amber-700
+                        'rgba(87, 83, 78, 1)', // stone-600
+                        'rgba(20, 83, 45, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'มูลค่า (ล้าน USD)', font: { family: 'Sarabun', size: 12, weight: 'bold' } },
+                        ticks: { font: { family: 'Sarabun', size: 10 } }
+                    },
+                    y: {
+                        ticks: { font: { family: 'Sarabun', size: 12 } }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: false,
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                         callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ล้าน USD';
+                            }
+                        },
+                        bodyFont: { family: 'Sarabun', size: 12 },
+                        titleFont: { family: 'Sarabun', size: 14 }
+                    }
+                }
+            }
+        });
+        
+        // 4. Income Comparison Chart
+        const incomeComparisonCtx = document.getElementById('incomeComparisonChart').getContext('2d');
+        new Chart(incomeComparisonCtx, {
+            type: 'bar',
+            data: {
+                labels: ['ภาคเกษตร', 'นอกภาคเกษตร'],
+                datasets: [{
+                    label: 'รายได้เฉลี่ยต่อปี (บาท)',
+                    data: [128000, 580000],
+                    backgroundColor: [nikemAmber, nikemGreen],
+                    borderColor: ['rgba(180, 83, 9, 1)', nikemDarkGreen],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                 scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'รายได้เฉลี่ย (บาท)', font: { family: 'Sarabun', size: 12, weight: 'bold' } },
+                        ticks: { 
+                            font: { family: 'Sarabun', size: 10 },
+                            callback: function(value) { return value.toLocaleString('th-TH');}
+                        }
+                    },
+                    x: {
+                         ticks: { font: { family: 'Sarabun', size: 12 } }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: false,
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                         callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toLocaleString('th-TH') + ' บาท';
+                            }
+                        },
+                        bodyFont: { family: 'Sarabun', size: 12 },
+                        titleFont: { family: 'Sarabun', size: 14 }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
