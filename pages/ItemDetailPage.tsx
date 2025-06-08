@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet';
 import { Infographic } from '../src/types';         // <--- แก้ไข Path
 import { IconArrowLeft } from '../components/icons'; // <--- แก้ไข Path (ถ้า icons อยู่ใน src/components)
 import { supabase } from '../src/supabaseClient';  // <--- แก้ไข Path
+// import '../styles/ItemDetailPage.css'; // Removed because the file does not exist
 
 // 2. นิยาม Interface ItemDetailPageProps ที่นี่
 interface ItemDetailPageProps {
