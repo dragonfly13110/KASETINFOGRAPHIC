@@ -7,6 +7,9 @@ import { IconArrowLeft } from '../components/icons';
 import { supabase } from '../src/supabaseClient';
 import './styles/ItemDetailPage.css';
 
+// ตั้งค่า marked ให้รองรับการแปลง newlines เป็น <br>
+marked.setOptions({ breaks: true });
+
 interface ItemDetailPageProps {
   isAdmin: boolean;
   onItemUpdate: (updatedItem: Infographic) => void;
@@ -283,14 +286,14 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
               </>
             ) : (
               <>
-                {!isEditMode && item.title && (
+                {item.title && (
                   <h1 className="text-3xl font-bold text-brand-gray-darktext mb-4">{item.title}</h1>
                 )}
                 {item.summary && (
                   <p className="text-lg text-brand-gray-darktext mb-4">{item.summary}</p>
                 )}
                 <div
-                  className="text-brand-gray-text leading-relaxed space-y-4 break-words"
+                  className="content-container whitespace-pre-line text-brand-gray-text leading-relaxed space-y-4 break-words"
                   onClick={handleContentClick}
                   dangerouslySetInnerHTML={{
                     __html: marked(item.content || '')
