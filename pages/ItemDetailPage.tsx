@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { marked } from 'marked';
 // 1. แก้ไข Path การ Import
 import { Infographic } from '../src/types';         // <--- แก้ไข Path
 import { IconArrowLeft } from '../components/icons'; // <--- แก้ไข Path (ถ้า icons อยู่ใน src/components)
@@ -294,16 +295,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ isAdmin, onItemUpdate, 
                   className="text-brand-gray-text leading-relaxed space-y-4 break-words"
                   onClick={handleContentClick}
                   dangerouslySetInnerHTML={{
-                    __html: (() => {
-                      let processedContent = item.content?.replace(/\n/g, '<br />') || '';
-                      const imageUrlRegex = /(?<!(?:src|href)=["'])(https?:\/\/[^\s<>"']+\.(?:png|jpg|jpeg|gif|webp))\b/gi;
-                      processedContent = processedContent.replace(
-                        imageUrlRegex,
-                        (url: string) =>
-                          `<img src="${url}" alt="Embedded image" class="clickable-content-image" style="max-width: 100%; max-height: 75vh; height: auto; object-fit: contain; display: block; margin: 0.5em auto; cursor: pointer;" />`
-                      );
-                      return processedContent;
-                    })(),
+                    __html: marked(item.content || '')
                   }}
                 />
               </>
