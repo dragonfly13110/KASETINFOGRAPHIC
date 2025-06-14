@@ -1,7 +1,7 @@
 export const PAGE_DESCRIPTIONS: Record<string, { title: string; subtitle: string }> = {
   home: {
     title: "เนื้อหาล่าสุด", 
-    subtitle: "แหล่งรวมความรู้เกษตรอินทรีย์ สัตว์เศรษฐกิจ และองค์ความรู้เพื่อคุณ"
+    subtitle: "แหล่งรวมความรู้ด้านการเกษตร สัตว์เศรษฐกิจ และเทคโนโลยีการเกษตร",
   },
   articles: {
     title: "บทความทางการเกษตร",

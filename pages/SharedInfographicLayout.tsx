@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Infographic, DisplayCategory, ALL_TAGS_OPTION } from '../src/types';
 import InfographicCard from '../components/InfographicCard';
@@ -97,7 +96,6 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
                 <InfographicCard
                   key={info.id}
                   infographic={info}
-                  customMinHeight={pageType === 'home' ? 'min-h-[380px]' : undefined} // กำหนดความสูงเฉพาะหน้าแรก
                 />
               ))}
             </div>
