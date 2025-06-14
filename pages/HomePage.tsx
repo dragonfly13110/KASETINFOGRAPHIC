@@ -8,8 +8,11 @@ interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ infographics }) => {
-  const latestInfographics = infographics.slice(0, 20); // Show only the latest 5 items
-  return <SharedInfographicLayout infographics={latestInfographics} pageType="home" />;
+  // Pass all infographics to SharedInfographicLayout and let it handle pagination
+  return <SharedInfographicLayout 
+            infographics={infographics} 
+            pageType="home" 
+            itemsPerPage={20} />; // Show up to 30 items per page on the homepage
 };
 
 export default HomePage;

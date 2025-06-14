@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Infographic, DisplayCategory, ALL_TAGS_OPTION } from '../src/types';
 import InfographicCard from '../components/InfographicCard';
 import PageBanner from '../components/PageBanner';
@@ -11,16 +11,19 @@ interface SharedInfographicLayoutProps {
   pageType: 'home' | 'articles' | 'technology' | 'infographics';
   filterByCategory?: DisplayCategory;
   showBackButton?: boolean;
+  itemsPerPage?: number;
 }
 
 const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
   infographics,
   pageType,
   filterByCategory,
-  showBackButton = false
+  showBackButton = false,
+  itemsPerPage
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>(ALL_TAGS_OPTION);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const pageInfo = PAGE_DESCRIPTIONS[pageType];
 
@@ -45,6 +48,23 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
     // Ensure "ทั้งหมด" is always the first option and unique tags follow
     return [ALL_TAGS_OPTION, ...tagsFromContent.filter(tag => tag !== ALL_TAGS_OPTION)];
   }, [infographics, filterByCategory]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedTag, filterByCategory, infographics, itemsPerPage]);
+
+  const totalPages = useMemo(() => {
+    if (!itemsPerPage || filteredInfographics.length === 0) return 1;
+    return Math.ceil(filteredInfographics.length / itemsPerPage);
+  }, [filteredInfographics, itemsPerPage]);
+
+  const paginatedInfographics = useMemo(() => {
+    if (!itemsPerPage) return filteredInfographics; // No pagination if itemsPerPage is not set
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredInfographics.slice(startIndex, endIndex);
+  }, [filteredInfographics, currentPage, itemsPerPage]);
 
   return (
     <>
@@ -87,12 +107,12 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
         </div>
 
         <main className="w-full">
-          {filteredInfographics.length > 0 ? (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${
-              pageType === 'home' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
-            } gap-6`}
-            >
-              {filteredInfographics.map(info => (
+          {filteredInfographics.length > 0 ? ( // Check based on all filtered items
+            <>
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${
+                pageType === 'home' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
+              } gap-6`}>
+              {paginatedInfographics.map(info => ( // Display paginated items
                 <InfographicCard
                   key={info.id}
                   infographic={info}
@@ -100,7 +120,31 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-lg shadow p-8">
+              {/* Pagination Controls */}
+              {itemsPerPage && totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center space-x-4">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ก่อนหน้า
+                  </button>
+                  <span className="text-sm text-gray-700">
+                    หน้า {currentPage} จาก {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 border rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ถัดไป
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-lg shadow p-8"> {/* This is the "no content" block */}
               <p className="text-xl text-brand-gray-text">ไม่พบเนื้อหาที่ตรงกับเงื่อนไข</p>
               { (searchTerm || selectedTag !== ALL_TAGS_OPTION) &&
                 <button
