@@ -70,7 +70,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
   return (
     <div className="flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-full md:w-[15%] p-4 border-r border-gray-200 bg-gray-50 md:h-screen md:sticky md:top-0 overflow-y-auto">
+      <aside className="hidden md:block md:w-[15%] p-4 border-r border-gray-200 bg-gray-50 md:h-screen md:sticky md:top-0 overflow-y-auto">
         <img
           src="https://dldiedktrkbwpqznxdwk.supabase.co/storage/v1/object/public/images//326481288_1393570211463146_8610728916042085217_n.jpg"
           alt="Sidebar Header Image"
@@ -101,7 +101,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
       </aside>
 
       {/* Main content */}
-      <div className="w-full md:w-[85%]">
+      <div className="w-full"> {/* Main content takes full width on mobile, 85% on md+ */}
         <PageBanner title={pageInfo.title} subtitle={pageInfo.subtitle} showBackButton={showBackButton} />
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="mb-6 p-6 bg-white rounded-lg shadow">

@@ -138,6 +138,7 @@ const App: React.FC = () => {
               path="/item/:itemId"
               element={
                 <ItemDetailPage
+                  infographics={infographics} // Pass all infographics
                   isAdmin={true}
                   onItemUpdate={(updatedItem) =>
                     setInfographics((prev) =>
