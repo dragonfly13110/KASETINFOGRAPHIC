@@ -9,6 +9,7 @@ import TechnologyPage from './pages/TechnologyPage';
 import AdminPage from './pages/AdminPage';
 import InfographicsPage from './pages/InfographicsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
+import AllStoriesPage from './pages/AllStoriesPage'; // 1. Import AllStoriesPage
 import { Infographic } from './src/types';
 import { supabase } from './src/supabaseClient';
 
@@ -150,6 +151,10 @@ const App: React.FC = () => {
               }
             />
             <Route path="/admin" element={<AdminPage onAddInfographic={addInfographic} />} />
+            <Route
+              path="/all-stories"
+              element={<AllStoriesPage infographics={infographics} />} // 2. Add Route for AllStoriesPage
+            />
           </Routes>
         </main>
         <KnowledgeLinks /> {/* เพิ่ม KnowledgeLinks ก่อน Footer */}
