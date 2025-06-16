@@ -169,6 +169,17 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
                     </button>
                   </div>
                 )}
+                {/* Add "View All Stories" button below pagination */}
+                {itemsPerPage && totalPages > 1 && (
+                  <div className="mt-6 text-center">
+                    <Link
+                      to="/all-stories"
+                      className="px-5 py-2.5 bg-brand-green text-white rounded-md hover:bg-brand-green-dark transition text-sm font-medium"
+                    >
+                      ดูเรื่องทั้งหมด
+                    </Link>
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-center py-12 bg-white rounded-lg shadow p-8">

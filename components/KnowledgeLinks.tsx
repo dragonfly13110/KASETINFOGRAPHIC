@@ -17,9 +17,7 @@ const knowledgeLinkData: LinkCategory[] = [
       { href: "https://www.moac.go.th/", text: "กระทรวงเกษตรและสหกรณ์" },
       { href: "https://www.doa.go.th/", text: "กรมวิชาการเกษตร" },
       { href: "https://www.dld.go.th/", text: "กรมปศุสัตว์" },
-      { href: "https://www.rid.go.th/", text: "กรมชลประทาน" },
       { href: "https://www.doae.go.th/", text: "กรมส่งเสริมการเกษตร" },
-      { href: "https://www.oae.go.th/", text: "สำนักงานเศรษฐกิจการเกษตร (สศก.)" },
     ],
   },
   {
@@ -28,9 +26,7 @@ const knowledgeLinkData: LinkCategory[] = [
       { href: "https://www.ku.ac.th/th", text: "มหาวิทยาลัยเกษตรศาสตร์" }, // ย้าย NIDA ออก และเน้น ม.เกษตร
       { href: "https://agri.cmu.ac.th/", text: "คณะเกษตรศาสตร์ มช." },
       { href: "https://www.nstda.or.th/home/research-program/agriculture-and-biotechnology/", text: "สวทช. (กลุ่มเกษตรและเทคโนโลยีชีวภาพ)" },
-      { href: "https://www.arda.or.th/kasetinfo/", text: "คลังข้อมูล สวก. (ARDA KasetInfo)" },
       { href: "https://www.doa.go.th/main/?page_id=123", text: "คลังความรู้ กรมวิชาการเกษตร" }, // เพิ่มคลังความรู้ DOA
-      { href: "https://www.arda.or.th/", text: "สวก. (สำนักงานพัฒนาการวิจัยการเกษตร)" },
     ],
   },
   {
