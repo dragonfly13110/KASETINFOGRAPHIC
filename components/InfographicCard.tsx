@@ -14,8 +14,25 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic, isHomePa
 
   // Define classes for the image wrapper based on whether it's the homepage
   const imageWrapperClass = isHomePage
-    ? "w-full aspect-[9/16] overflow-hidden cursor-pointer" // 9:16 aspect ratio for homepage
+    ? "w-full aspect-square overflow-hidden cursor-pointer" // Changed to square aspect ratio for homepage
     : "w-full h-96 overflow-hidden cursor-pointer"; // Fixed height for images on other pages, adjust as needed
+
+  let finalImageUrl = infographic.imageUrl || 'https://picsum.photos/600/400?grayscale';
+
+  if (isHomePage && infographic.imageUrl && infographic.imageUrl.includes('supabase.co/storage/v1/object/public')) {
+    try {
+      const url = new URL(infographic.imageUrl);
+      // Add or update the 'quality' parameter
+      // Supabase transformations use query parameters like 'quality', 'width', 'height'
+      // https://supabase.com/docs/guides/storage/image-transformations
+      url.searchParams.set('quality', '50');
+      finalImageUrl = url.toString();
+    } catch (e) {
+      console.warn("Failed to modify image URL for quality adjustment on homepage:", e);
+      // Fallback to original URL if modification fails
+      finalImageUrl = infographic.imageUrl || 'https://picsum.photos/600/400?grayscale';
+    }
+  }
 
   return (
     <div className={`bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col ${cardMinHeightClass}`}>
@@ -25,7 +42,7 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic, isHomePa
       >
         <img
           className="w-full h-full object-cover object-top" // Image will cover the wrapper and align to top
-          src={infographic.imageUrl || 'https://picsum.photos/600/400?grayscale'}
+          src={finalImageUrl}
           alt={infographic.title}
           onError={(e) => (e.currentTarget.src = 'https://picsum.photos/600/400?grayscale')}
         />
