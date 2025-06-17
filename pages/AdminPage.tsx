@@ -4,8 +4,10 @@ import { supabase } from '../src/supabaseClient'; // ตรวจสอบว่
 import { Infographic, DisplayCategory } from '../src/types'; // ประเภทข้อมูลที่คุณกำหนด
 import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons'; // ไอคอนของคุณ
 
-// --- Configuration ---
-const IMAGE_BUCKET_NAME = 'images'; // <--- ★★★ ชื่อ Bucket ของคุณ ★★★
+// --- Cloudinary Configuration ---
+const CLOUDINARY_CLOUD_NAME = 'dzksawh1d'; // Your Cloudinary cloud name
+const CLOUDINARY_UPLOAD_PRESET = 'KASET77'; // ★★★ สร้าง Unsigned Upload Preset ใน Cloudinary แล้วใส่ชื่อที่นี่ ★★★
+// const CLOUDINARY_API_KEY = 'hkJ9a9G1sHJiZX6uNyhal9vjkg0'; // API Key (มักจะไม่จำเป็นสำหรับ Unsigned Presets)
 
 interface AdminPageProps {
   onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
@@ -186,37 +188,37 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     showMessage('', 'success'); // Clear previous messages (type is required, but message is empty)
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      // เก็บไฟล์ใน subfolder 'public/' ภายใน bucket 'images' ของคุณ
-      // หากคุณไม่มี subfolder 'public' ใน bucket 'images' หรือต้องการเก็บที่ root ให้ใช้ filePath = uniqueFileName;
-      const filePath = `public/${uniqueFileName}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      // หากจำเป็นต้องใช้ API Key กับ Unsigned Preset (ปกติไม่จำเป็น)
+      // formData.append('api_key', CLOUDINARY_API_KEY);
 
-      const { error: uploadError } = await supabase.storage
-        .from(IMAGE_BUCKET_NAME) // ใช้ 'images'
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
-      if (uploadError) {
-        throw uploadError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Cloudinary upload failed');
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from(IMAGE_BUCKET_NAME) // ใช้ 'images'
-        .getPublicUrl(filePath);
+      const data = await response.json();
 
-      if (!publicUrlData?.publicUrl) {
-        throw new Error('ไม่สามารถรับ Public URL ของรูปภาพที่อัปโหลดได้');
+      if (!data.secure_url) {
+        throw new Error('ไม่สามารถรับ Public URL ของรูปภาพที่อัปโหลดได้จาก Cloudinary');
       }
 
-      setUploadedFileUrl(publicUrlData.publicUrl);
-      showMessage('อัปโหลดรูปภาพสำเร็จ!', 'success');
+      setUploadedFileUrl(data.secure_url);
+      showMessage('อัปโหลดรูปภาพไปยัง Cloudinary สำเร็จ!', 'success');
 
     } catch (err: any) {
-      console.error("Image upload error:", err);
-      showMessage(`เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ${err.message}`, 'error');
+      console.error("Cloudinary Image upload error:", err);
+      showMessage(`เกิดข้อผิดพลาดในการอัปโหลดรูปภาพไปยัง Cloudinary: ${err.message}`, 'error');
       setUploadedFile(null);
       setUploadedFileUrl('');
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -395,7 +397,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
           {/* Image Upload */}
           <div>
             <label htmlFor="uploadImage" className="block text-sm font-medium text-gray-700">
-              หรืออัปโหลดภาพ (จาก Bucket: {IMAGE_BUCKET_NAME})
+              หรืออัปโหลดภาพ (ไปยัง Cloudinary)
             </label>
             <input
               type="file"
