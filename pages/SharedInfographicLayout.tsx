@@ -72,7 +72,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
       {/* Sidebar */}
       <aside className="hidden md:block md:w-[15%] p-4 border-r border-gray-200 bg-gray-50 md:h-screen md:sticky md:top-0 overflow-y-auto">
         <img
-          src="https://dldiedktrkbwpqznxdwk.supabase.co/storage/v1/object/public/images//326481288_1393570211463146_8610728916042085217_n.jpg"
+          src="https://res.cloudinary.com/dzksawh1d/image/upload/q_auto,f_auto,w_800/v1750155546/326481288_1393570211463146_8610728916042085217_n_pamzmy.jpg"
           alt="Sidebar Header Image"
           className="w-full h-auto object-cover rounded-md mb-4"
         />

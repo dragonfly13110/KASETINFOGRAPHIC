@@ -19,18 +19,51 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic, isHomePa
 
   let finalImageUrl = infographic.imageUrl || 'https://picsum.photos/600/400?grayscale';
 
-  if (isHomePage && infographic.imageUrl && infographic.imageUrl.includes('supabase.co/storage/v1/object/public')) {
-    try {
-      const url = new URL(infographic.imageUrl);
-      // Add or update the 'quality' parameter
-      // Supabase transformations use query parameters like 'quality', 'width', 'height'
-      // https://supabase.com/docs/guides/storage/image-transformations
-      url.searchParams.set('quality', '50');
-      finalImageUrl = url.toString();
-    } catch (e) {
-      console.warn("Failed to modify image URL for quality adjustment on homepage:", e);
-      // Fallback to original URL if modification fails
-      finalImageUrl = infographic.imageUrl || 'https://picsum.photos/600/400?grayscale';
+  if (isHomePage && infographic.imageUrl) {
+    // Only apply quality adjustment for Cloudinary URLs on the homepage
+    if (infographic.imageUrl.includes('res.cloudinary.com/') && infographic.imageUrl.includes('/upload/')) {
+      try {
+        const parts = infographic.imageUrl.split('/upload/');
+        const baseUrl = parts[0] + '/upload/';
+        const pathAfterUpload = parts[1];
+        const segments = pathAfterUpload.split('/');
+        let newPathAfterUpload;
+
+        if (segments.length > 0) {
+          let firstSegment = segments[0];
+          const desiredTransformations = "q_auto,f_auto";
+
+          if (/^v\d+$/.test(firstSegment)) {
+            // URL: /upload/v12345/image.jpg -> /upload/q_auto,f_auto/v12345/image.jpg
+            newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
+          } else if (firstSegment.includes('_') || firstSegment.includes(',')) {
+            // URL has existing transformations e.g., /upload/w_100,c_fill/image.jpg
+            // We want to add/replace q_auto and f_auto
+            let existingParamsArray = firstSegment.split(',');
+            
+            // Filter out any existing q_... and f_... parameters
+            existingParamsArray = existingParamsArray.filter(param => 
+              !param.startsWith('q_') && !param.startsWith('f_')
+            );
+            
+            // Prepend desired transformations and then the filtered existing ones
+            const newParamsArray = [desiredTransformations, ...existingParamsArray.filter(p => p.trim() !== '')];
+            firstSegment = newParamsArray.join(',');
+            
+            newPathAfterUpload = [firstSegment, ...segments.slice(1)].join('/');
+          } else {
+            // URL: /upload/image.jpg -> /upload/q_auto,f_auto/image.jpg
+            newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
+          }
+          finalImageUrl = baseUrl + newPathAfterUpload;
+        } else {
+          // pathAfterUpload is empty, unlikely for a valid image URL
+          finalImageUrl = infographic.imageUrl; // No change
+        }
+      } catch (e) {
+        console.warn("Failed to modify Cloudinary image URL for quality adjustment on homepage:", e);
+        finalImageUrl = infographic.imageUrl; // Fallback to original Cloudinary URL
+      }
     }
   }
 

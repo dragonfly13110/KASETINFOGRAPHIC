@@ -73,6 +73,55 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
     }
   }, [itemId]);
 
+  // --- New logic for display image URL with Cloudinary transformations ---
+  const displayImageUrl = useMemo(() => {
+    if (!item?.imageUrl) {
+      return 'https://picsum.photos/800/600?grayscale'; // Fallback if no image URL
+    }
+
+    const originalUrl = item.imageUrl;
+
+    // Apply transformations only if it's a Cloudinary URL
+    if (originalUrl.includes('res.cloudinary.com/') && originalUrl.includes('/upload/')) {
+      try {
+        const parts = originalUrl.split('/upload/');
+        const baseUrl = parts[0] + '/upload/';
+        const pathAfterUpload = parts[1];
+        const segments = pathAfterUpload.split('/');
+        let newPathAfterUpload = pathAfterUpload; // Default to original path
+
+        if (segments.length > 0) {
+          let firstSegment = segments[0];
+          const desiredTransformations = "q_auto,f_auto";
+
+          // Check if the first segment is a version number (e.g., v12345)
+          if (/^v\d+$/.test(firstSegment)) {
+            // Insert transformations before the version number
+            newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
+          } else if (firstSegment.includes('_') || firstSegment.includes(',')) {
+            // Existing transformations are present, add/replace q_auto and f_auto
+            let existingParamsArray = firstSegment.split(',').filter(param =>
+              !param.startsWith('q_') && !param.startsWith('f_') // Remove existing quality/format params
+            );
+            const newParamsArray = [desiredTransformations, ...existingParamsArray.filter(p => p.trim() !== '')];
+            firstSegment = newParamsArray.join(',');
+            newPathAfterUpload = [firstSegment, ...segments.slice(1)].join('/');
+          } else {
+            // No version or transformations, insert at the beginning of the path
+            newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
+          }
+          return baseUrl + newPathAfterUpload;
+        }
+      } catch (e) {
+        console.warn("Failed to modify Cloudinary image URL for display:", e);
+      }
+    }
+
+    // For non-Cloudinary URLs or if modification fails, return the original URL
+    return originalUrl;
+  }, [item?.imageUrl]); // Recalculate when item.imageUrl changes
+  // --- End new logic ---
+
   useEffect(() => {
     fetchItem();
   }, [fetchItem]);
@@ -197,7 +246,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
       {/* Sidebar */}
       <aside className="hidden md:block md:w-[15%] p-4 border-r border-gray-200 bg-gray-50 md:h-screen md:sticky md:top-0 overflow-y-auto">
         <img
-          src="https://dldiedktrkbwpqznxdwk.supabase.co/storage/v1/object/public/images//326481288_1393570211463146_8610728916042085217_n.jpg"
+          src="https://res.cloudinary.com/dzksawh1d/image/upload/q_auto,f_auto,w_800/v1750155546/326481288_1393570211463146_8610728916042085217_n_pamzmy.jpg"
           alt="Sidebar Header Image"
           className="w-full h-auto object-cover rounded-md mb-4"
         />
@@ -241,7 +290,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
             {item.imageUrl && (
               <img
                 className="w-auto h-auto object-contain max-h-[50vh] cursor-pointer self-center"
-                src={item.imageUrl}
+                src={displayImageUrl} // Use the potentially transformed URL for initial display
                 alt={item.title}
                 onClick={() => openImageInModal(item.imageUrl)}
                 onError={(e) => (e.currentTarget.src = 'https://picsum.photos/800/600?grayscale')}
@@ -372,7 +421,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
               <div className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-lg shadow-xl">
                 <img
                   className="w-auto h-auto max-w-full max-h-[calc(90vh-4rem)] object-contain"
-                  src={modalImageSrc}
+                  src={modalImageSrc} // This is the original URL passed from openImageInModal
                   alt={modalImageSrc === item.imageUrl ? item.title : "ภาพขยาย"}
                   onError={(e) => {
                     const imgElement = e.currentTarget;
