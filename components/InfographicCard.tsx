@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Infographic } from '../src/types';
 
 interface InfographicCardProps {
@@ -8,116 +7,57 @@ interface InfographicCardProps {
   isHomePage?: boolean;
 }
 
-const InfographicCard: React.FC<InfographicCardProps> = ({ infographic, isHomePage }) => {
-  const navigate = useNavigate(); // Initialize useNavigate
-  const cardMinHeightClass = "min-h-[420px]"; // Default card min height, can be adjusted
+const InfographicCard: React.FC<InfographicCardProps> = ({ infographic }) => {
 
-  // Define classes for the image wrapper based on whether it's the homepage
-  const imageWrapperClass = isHomePage
-    ? "w-full aspect-square overflow-hidden cursor-pointer" // Changed to square aspect ratio for homepage
-    : "w-full h-96 overflow-hidden cursor-pointer"; // Fixed height for images on other pages, adjust as needed
+  const thumbnailUrl = useMemo(() => {
+    const fallbackUrl = 'https://picsum.photos/400/300?grayscale';
+    if (!infographic.imageUrl) {
+      return fallbackUrl;
+    }
 
-  let finalImageUrl = infographic.imageUrl || 'https://picsum.photos/600/400?grayscale';
-
-  if (isHomePage && infographic.imageUrl) {
-    // Only apply quality adjustment for Cloudinary URLs on the homepage
-    if (infographic.imageUrl.includes('res.cloudinary.com/') && infographic.imageUrl.includes('/upload/')) {
-      try {
-        const parts = infographic.imageUrl.split('/upload/');
-        const baseUrl = parts[0] + '/upload/';
-        const pathAfterUpload = parts[1];
-        const segments = pathAfterUpload.split('/');
-        let newPathAfterUpload;
-
-        if (segments.length > 0) {
-          let firstSegment = segments[0];
-          const desiredTransformations = "q_auto,f_auto";
-
-          if (/^v\d+$/.test(firstSegment)) {
-            // URL: /upload/v12345/image.jpg -> /upload/q_auto,f_auto/v12345/image.jpg
-            newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
-          } else if (firstSegment.includes('_') || firstSegment.includes(',')) {
-            // URL has existing transformations e.g., /upload/w_100,c_fill/image.jpg
-            // We want to add/replace q_auto and f_auto
-            let existingParamsArray = firstSegment.split(',');
-            
-            // Filter out any existing q_... and f_... parameters
-            existingParamsArray = existingParamsArray.filter(param => 
-              !param.startsWith('q_') && !param.startsWith('f_')
-            );
-            
-            // Prepend desired transformations and then the filtered existing ones
-            const newParamsArray = [desiredTransformations, ...existingParamsArray.filter(p => p.trim() !== '')];
-            firstSegment = newParamsArray.join(',');
-            
-            newPathAfterUpload = [firstSegment, ...segments.slice(1)].join('/');
-          } else {
-            // URL: /upload/image.jpg -> /upload/q_auto,f_auto/image.jpg
-            newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
-          }
-          finalImageUrl = baseUrl + newPathAfterUpload;
-        } else {
-          // pathAfterUpload is empty, unlikely for a valid image URL
-          finalImageUrl = infographic.imageUrl; // No change
-        }
-      } catch (e) {
-        console.warn("Failed to modify Cloudinary image URL for quality adjustment on homepage:", e);
-        finalImageUrl = infographic.imageUrl; // Fallback to original Cloudinary URL
+    // Use Cloudinary transformations for thumbnails
+    if (infographic.imageUrl.includes('res.cloudinary.com/')) {
+      const parts = infographic.imageUrl.split('/upload/');
+      if (parts.length > 1) {
+        // c_fill: ตัดภาพให้เต็มขนาดที่กำหนด
+        // g_north: ยึดส่วนบนของภาพไว้เมื่อทำการตัด
+        // w_300, h_338: กำหนดขนาดเป็นสัดส่วนแนวตั้ง 8:9 (เตี้ยกว่า 4:5 แต่ไม่จัตุรัส)
+        // q_auto, f_auto: automatic quality and format for optimization
+        const transformations = 'c_fill,g_north,w_300,h_338,q_auto,f_auto';
+        return `${parts[0]}/upload/${transformations}/${parts[1]}`;
       }
     }
-  }
+    
+    return infographic.imageUrl; // Return original URL if not Cloudinary or format is unexpected
+  }, [infographic.imageUrl]);
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col ${cardMinHeightClass}`}>
-      <div
-        className={imageWrapperClass}
-        onClick={() => navigate(`/item/${infographic.id}`)} // Navigate when the image container is clicked
-      >
+    <Link
+      to={`/item/${infographic.id}`}
+      className="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 flex flex-col overflow-hidden h-full"
+      aria-label={`อ่านเพิ่มเติมเกี่ยวกับ ${infographic.title}`}
+    >
+      {/* ใช้ aspect-ratio เพื่อบังคับสัดส่วน 8:9 (แนวตั้ง) ให้กับ container ของรูป */}
+      <div className="relative overflow-hidden rounded-t-lg aspect-[8/9]">
         <img
-          className="w-full h-full object-cover object-top" // Image will cover the wrapper and align to top
-          src={finalImageUrl}
+          className="object-cover object-top w-full h-full transition-transform duration-300 ease-in-out group-hover:scale-105"
+          src={thumbnailUrl}
           alt={infographic.title}
-          onError={(e) => (e.currentTarget.src = 'https://picsum.photos/600/400?grayscale')}
+          onError={(e) => (e.currentTarget.src = 'https://picsum.photos/400/300?grayscale')}
+          loading="lazy"
         />
       </div>
-      <div className="p-6 flex flex-col flex-grow">
-        <div>
-          <span className="inline-block bg-brand-green text-white text-xs font-semibold px-2 py-1 rounded-full uppercase mb-2">
-            {infographic.displayCategory}
-          </span>
-          <h3
-            className="text-xl font-semibold text-brand-gray-darktext mb-2 cursor-pointer hover:text-brand-green transition-colors"
-            onClick={() => navigate(`/item/${infographic.id}`)} // Navigate when title is clicked
-          >
-            {infographic.title}
-          </h3>
-          <p className="text-xs text-gray-500 mb-3">{infographic.date}</p>
-          <p className="text-brand-gray-text text-sm mb-4 line-clamp-3 flex-grow">{infographic.summary}</p>
-        </div>
-        <div className="mt-auto">
-          {infographic.tags.length > 0 && (
-            <div className="mb-4">
-              {infographic.tags.slice(0, 3).map(tag => (
-                <span key={tag} className="inline-block bg-gray-200 text-gray-700 text-xs font-medium mr-2 mb-2 px-2.5 py-0.5 rounded-full">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-          <a
-            href={`#/item/${infographic.id}`} // Updated href for direct linking if needed
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(`/item/${infographic.id}`); // Navigate to item detail page
-            }}
-            className="text-brand-green font-semibold hover:text-brand-green-dark transition-colors duration-200 inline-flex items-center"
-            aria-label={`ดูรายละเอียดเกี่ยวกับ ${infographic.title}`}
-          >
-            ดูรายละเอียด <span className="ml-1">→</span>
-          </a>
-        </div>
+      <div className="p-4 flex-grow flex flex-col">
+        <h3 className="text-md font-semibold text-brand-gray-darktext mb-2 group-hover:text-brand-green transition-colors duration-200 line-clamp-2" title={infographic.title}>
+          {infographic.title}
+        </h3>
+        {infographic.summary && (
+          <p className="text-sm text-brand-gray-text line-clamp-3">
+            {infographic.summary}
+          </p>
+        )}
       </div>
-    </div>
+    </Link>
   );
 };
 
