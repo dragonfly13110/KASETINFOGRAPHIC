@@ -5,8 +5,8 @@ import { Infographic, DisplayCategory } from '../src/types'; // ประเภ�
 import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons'; // ไอคอนของคุณ
 
 // --- Cloudinary Configuration for Multiple Accounts ---
-const CLOUDINARY_CLOUD_NAMES = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAMES || '').split(',').map(s => s.trim()).filter(Boolean);
-const CLOUDINARY_UPLOAD_PRESETS = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESETS || '').split(',').map(s => s.trim()).filter(Boolean);
+const CLOUDINARY_CLOUD_NAMES = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAMES || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+const CLOUDINARY_UPLOAD_PRESETS = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESETS || '').split(',').map((s: string) => s.trim()).filter(Boolean);
 
 // Helper function to get a random configuration for an upload
 const getRandomCloudinaryConfig = () => {
