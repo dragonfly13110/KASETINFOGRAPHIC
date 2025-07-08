@@ -4,10 +4,24 @@ import { supabase } from '../src/supabaseClient'; // ตรวจสอบว่
 import { Infographic, DisplayCategory } from '../src/types'; // ประเภทข้อมูลที่คุณกำหนด
 import { IconPlusCircle, IconUserCircle, IconLockClosed } from '../components/icons'; // ไอคอนของคุณ
 
-// --- Cloudinary Configuration ---
-const CLOUDINARY_CLOUD_NAME = 'dzksawh1d'; // Your Cloudinary cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'KASET77'; // ★★★ สร้าง Unsigned Upload Preset ใน Cloudinary แล้วใส่ชื่อที่นี่ ★★★
-// const CLOUDINARY_API_KEY = 'hkJ9a9G1sHJiZX6uNyhal9vjkg0'; // API Key (มักจะไม่จำเป็นสำหรับ Unsigned Presets)
+// --- Cloudinary Configuration for Multiple Accounts ---
+const CLOUDINARY_CLOUD_NAMES = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAMES || '').split(',').map(s => s.trim()).filter(Boolean);
+const CLOUDINARY_UPLOAD_PRESETS = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESETS || '').split(',').map(s => s.trim()).filter(Boolean);
+
+// Helper function to get a random configuration for an upload
+const getRandomCloudinaryConfig = () => {
+  if (CLOUDINARY_CLOUD_NAMES.length === 0 || CLOUDINARY_CLOUD_NAMES.length !== CLOUDINARY_UPLOAD_PRESETS.length) {
+    console.error("Cloudinary environment variables are not set up correctly. Ensure VITE_CLOUDINARY_CLOUD_NAMES and VITE_CLOUDINARY_UPLOAD_PRESETS are comma-separated and have the same number of items.");
+    // Return null or a default to handle the error gracefully
+    return null;
+  }
+  const randomIndex = Math.floor(Math.random() * CLOUDINARY_CLOUD_NAMES.length);
+  return {
+    cloudName: CLOUDINARY_CLOUD_NAMES[randomIndex],
+    uploadPreset: CLOUDINARY_UPLOAD_PRESETS[randomIndex],
+  };
+};
+
 
 const predefinedTags = [
   'ศัตรูพืช (Plant Pests)',
@@ -207,15 +221,23 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     setUploadedFileUrl(''); // เคลียร์ URL ที่อัปโหลดสำเร็จก่อนหน้าก่อนการพยายามครั้งใหม่
     showMessage('', 'success'); // Clear previous messages (type is required, but message is empty)
 
+    // Get a random Cloudinary account configuration for this upload
+    const cloudinaryConfig = getRandomCloudinaryConfig();
+    if (!cloudinaryConfig) {
+        showMessage('เกิดข้อผิดพลาด: การตั้งค่า Cloudinary ไม่ถูกต้อง โปรดตรวจสอบไฟล์ .env', 'error');
+        setIsUploadingImage(false);
+        return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('upload_preset', cloudinaryConfig.uploadPreset);
       // หากจำเป็นต้องใช้ API Key กับ Unsigned Preset (ปกติไม่จำเป็น)
       // formData.append('api_key', CLOUDINARY_API_KEY);
 
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`,
         {
           method: 'POST',
           body: formData,
