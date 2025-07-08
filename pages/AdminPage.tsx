@@ -311,6 +311,12 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       return;
     }
 
+    // Prevent submission if a file was selected but upload failed (no URL)
+    if (uploadedFile && !uploadedFileUrl) {
+      showMessage('การอัปโหลดรูปภาพล้มเหลว โปรดลองอัปโหลดอีกครั้ง หรือลบรูปภาพที่เลือกออก', 'error');
+      return;
+    }
+
     setIsSubmittingForm(true);
 
     try {
