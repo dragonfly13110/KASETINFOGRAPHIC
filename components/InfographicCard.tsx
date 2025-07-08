@@ -22,8 +22,9 @@ const InfographicCard: React.FC<InfographicCardProps> = ({ infographic }) => {
         // c_fill: ตัดภาพให้เต็มขนาดที่กำหนด
         // g_north: ยึดส่วนบนของภาพไว้เมื่อทำการตัด
         // w_300, h_338: กำหนดขนาดเป็นสัดส่วนแนวตั้ง 8:9 (เตี้ยกว่า 4:5 แต่ไม่จัตุรัส)
-        // q_auto, f_auto: automatic quality and format for optimization
-        const transformations = 'c_fill,g_north,w_300,h_338,q_auto,f_auto';
+        // w_400, h_450: เพิ่มขนาดเพื่อความคมชัดบนจอความละเอียดสูง (ยังคงสัดส่วน 8:9)
+        // q_auto:good, f_auto: ปรับคุณภาพให้ดีขึ้น และใช้ format อัตโนมัติ
+        const transformations = 'c_fill,g_north,w_640,h_720,q_auto:good,f_auto';
         return `${parts[0]}/upload/${transformations}/${parts[1]}`;
       }
     }
