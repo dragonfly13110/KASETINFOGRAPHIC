@@ -9,6 +9,22 @@ const CLOUDINARY_CLOUD_NAME = 'dzksawh1d'; // Your Cloudinary cloud name
 const CLOUDINARY_UPLOAD_PRESET = 'KASET77'; // ★★★ สร้าง Unsigned Upload Preset ใน Cloudinary แล้วใส่ชื่อที่นี่ ★★★
 // const CLOUDINARY_API_KEY = 'hkJ9a9G1sHJiZX6uNyhal9vjkg0'; // API Key (มักจะไม่จำเป็นสำหรับ Unsigned Presets)
 
+const predefinedTags = [
+  'ศัตรูพืช (Plant Pests)',
+  'โรคพืช (Plant Diseases)',
+  'เทคนิคเพาะปลูก (Cultivation Techniques)',
+  'ทั่วไป (General)',
+  'การผลิตเชื้อ (Pathogen Production / Microbial Production)',
+  'วิสาหกิจชุมชน (Community Enterprise)',
+  'หยุดเผา (Stop Burning)',
+  'แมลง (Insects)',
+  'สมุนไพร (Herbs)',
+  'ความรู้เกษตร (Agricultural Knowledge)',
+  'เพาะปลูก (Cultivation)',
+  'ไม้ผล (Fruit Trees)',
+];
+const OTHER_TAG_OPTION = 'และอื่นๆ';
+
 interface AdminPageProps {
   onAddInfographic: (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => Promise<void>;
 }
@@ -31,7 +47,9 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
   const [summary, setSummary] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const [displayCategory, setDisplayCategory] = useState<DisplayCategory>(DisplayCategory.INFOGRAPHIC);
-  const [tags, setTags] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTagSelection, setCurrentTagSelection] = useState<string>(predefinedTags[0]);
+  const [customTag, setCustomTag] = useState<string>('');
 
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   const [isSubmittingForm, setIsSubmittingForm] = useState<boolean>(false);
@@ -89,7 +107,9 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     setSummary('');
     setContent('');
     setDisplayCategory(DisplayCategory.INFOGRAPHIC);
-    setTags('');
+    setTags([]);
+    setCurrentTagSelection(predefinedTags[0]);
+    setCustomTag('');
   };
 
   const showMessage = (message: string, type: 'success' | 'error' | '') => {
@@ -236,6 +256,25 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     showMessage('ลบรูปภาพที่เลือกแล้ว', 'success');
   };
 
+  const handleAddTag = () => {
+    const tagToAdd = currentTagSelection === OTHER_TAG_OPTION
+      ? customTag.trim()
+      : currentTagSelection;
+
+    if (tagToAdd && !tags.includes(tagToAdd)) {
+      setTags([...tags, tagToAdd]);
+    }
+    
+    // Reset inputs for next tag
+    setCustomTag('');
+    setCurrentTagSelection(predefinedTags[0]);
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+
   const handleSubmitInfographic = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     showMessage('', ''); // Clear previous messages
@@ -261,7 +300,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
         summary,
         content,
         displayCategory,
-        tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        tags: tags,
       });
 
       showMessage('เพิ่มเนื้อหาใหม่เรียบร้อยแล้ว!', 'success');
@@ -479,17 +518,63 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
 
           {/* Tags */}
           <div>
-            <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
-              แท็ก (Tags, คั่นด้วยจุลภาค ",")
+            <label htmlFor="tag-select" className="block text-sm font-medium text-gray-700">
+              แท็ก (Tags)
             </label>
-            <input
-              type="text"
-              id="tags"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
-              placeholder="เช่น พืชไร่, เทคโนโลยี, เกษตรอินทรีย์"
-            />
+            {/* Display selected tags */}
+            <div className="flex flex-wrap gap-2 mt-2 mb-2 min-h-[2.5rem]">
+              {tags.map(tag => (
+                <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-green-light text-brand-green-dark">
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-2 -mr-1 flex-shrink-0 h-4 w-4 rounded-full inline-flex items-center justify-center text-brand-green-dark hover:bg-brand-green-lighter hover:text-brand-green-darker focus:outline-none focus:bg-brand-green-dark focus:text-white transition-colors"
+                    aria-label={`Remove ${tag}`}
+                  >
+                    <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                      <path strokeLinecap="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            {/* Input for adding new tags */}
+            <div className="flex items-start sm:items-center gap-2 mt-1 flex-col sm:flex-row">
+              <div className="w-full sm:w-auto sm:flex-grow">
+                <select
+                  id="tag-select"
+                  value={currentTagSelection}
+                  onChange={(e) => setCurrentTagSelection(e.target.value)}
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm rounded-md"
+                >
+                  {predefinedTags.map(tag => (
+                    <option key={tag} value={tag}>{tag}</option>
+                  ))}
+                  <option value={OTHER_TAG_OPTION}>{OTHER_TAG_OPTION}</option>
+                </select>
+                {currentTagSelection === OTHER_TAG_OPTION && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      id="custom-tag"
+                      value={customTag}
+                      onChange={(e) => setCustomTag(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
+                      placeholder="พิมพ์แท็กที่ต้องการแล้วกด 'เพิ่มแท็ก'"
+                    />
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleAddTag}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-dark w-full sm:w-auto flex-shrink-0"
+              >
+                เพิ่มแท็ก
+              </button>
+            </div>
           </div>
 
           {/* Action Buttons */}
