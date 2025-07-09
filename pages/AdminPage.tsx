@@ -10,10 +10,14 @@ const CLOUDINARY_UPLOAD_PRESETS = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
 
 // Helper function to get a random configuration for an upload
 const getRandomCloudinaryConfig = () => {
-  if (CLOUDINARY_CLOUD_NAMES.length === 0 || CLOUDINARY_CLOUD_NAMES.length !== CLOUDINARY_UPLOAD_PRESETS.length) {
-    console.error("Cloudinary environment variables are not set up correctly. Ensure VITE_CLOUDINARY_CLOUD_NAMES and VITE_CLOUDINARY_UPLOAD_PRESETS are comma-separated and have the same number of items.");
-    // Return null or a default to handle the error gracefully
-    return null;
+  if (CLOUDINARY_CLOUD_NAMES.length === 0 || CLOUDINARY_UPLOAD_PRESETS.length === 0) {
+    const error = "VITE_CLOUDINARY_CLOUD_NAMES หรือ VITE_CLOUDINARY_UPLOAD_PRESETS ไม่ได้ถูกตั้งค่าใน environment variables";
+    console.error("Cloudinary Config Error:", error);
+    return { config: null, error };
+  }
+  if (CLOUDINARY_CLOUD_NAMES.length !== CLOUDINARY_UPLOAD_PRESETS.length) {
+    const error = "จำนวนของ VITE_CLOUDINARY_CLOUD_NAMES และ VITE_CLOUDINARY_UPLOAD_PRESETS ไม่ตรงกัน";
+    
   }
   const randomIndex = Math.floor(Math.random() * CLOUDINARY_CLOUD_NAMES.length);
   return {
