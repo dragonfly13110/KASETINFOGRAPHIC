@@ -17,7 +17,8 @@ const getRandomCloudinaryConfig = () => {
   }
   if (CLOUDINARY_CLOUD_NAMES.length !== CLOUDINARY_UPLOAD_PRESETS.length) {
     const error = "จำนวนของ VITE_CLOUDINARY_CLOUD_NAMES และ VITE_CLOUDINARY_UPLOAD_PRESETS ไม่ตรงกัน";
-    
+    console.error("Cloudinary Config Error:", error);
+    return { config: null, error };
   }
   const randomIndex = Math.floor(Math.random() * CLOUDINARY_CLOUD_NAMES.length);
   return {
@@ -227,8 +228,8 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
 
     // Get a random Cloudinary account configuration for this upload
     const cloudinaryConfig = getRandomCloudinaryConfig();
-    if (!cloudinaryConfig) {
-        showMessage('เกิดข้อผิดพลาด: การตั้งค่า Cloudinary ไม่ถูกต้อง โปรดตรวจสอบไฟล์ .env', 'error');
+    if ('error' in cloudinaryConfig && cloudinaryConfig.error) {
+        showMessage(`เกิดข้อผิดพลาด: ${cloudinaryConfig.error}`, 'error');
         setIsUploadingImage(false);
         return;
     }
