@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom'; // Import Link
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { marked } from 'marked';
 import { Infographic } from '../src/types';
@@ -10,8 +10,24 @@ import './styles/ItemDetailPage.css';
 // ตั้งค่า marked ให้รองรับการแปลง newlines เป็น <br>
 marked.setOptions({ breaks: true });
 
+const predefinedTags = [
+  'ศัตรูพืช (Plant Pests)',
+  'โรคพืช (Plant Diseases)',
+  'เทคนิคเพาะปลูก (Cultivation Techniques)',
+  'ทั่วไป (General)',
+  'การผลิตเชื้อ (Pathogen Production / Microbial Production)',
+  'วิสาหกิจชุมชน (Community Enterprise)',
+  'หยุดเผา (Stop Burning)',
+  'แมลง (Insects)',
+  'สมุนไพร (Herbs)',
+  'ความรู้เกษตร (Agricultural Knowledge)',
+  'เพาะปลูก (Cultivation)',
+  'ไม้ผล (Fruit Trees)',
+];
+const OTHER_TAG_OPTION = 'และอื่นๆ';
+
 interface ItemDetailPageProps {
-  infographics: Infographic[]; // Add infographics to props
+  infographics: Infographic[];
   isAdmin: boolean;
   onItemUpdate: (updatedItem: Infographic) => void;
   reFetchInfographics: () => void;
@@ -31,9 +47,9 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
   const [editedSummary, setEditedSummary] = useState('');
-  // สำหรับ Tags เราจะรับเป็น comma-separated string
-  const [editedTags, setEditedTags] = useState('');
-  // เพิ่ม state สำหรับ Image URL
+  const [editedTags, setEditedTags] = useState<string[]>([]);
+  const [currentTagSelection, setCurrentTagSelection] = useState<string>(predefinedTags[0]);
+  const [customTag, setCustomTag] = useState<string>('');
   const [editedImageUrl, setEditedImageUrl] = useState('');
 
   const fetchItem = useCallback(async () => {
@@ -55,11 +71,11 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
       if (data) {
         const fetchedItem = data as Infographic;
         setItem(fetchedItem);
+        // ตั้งค่า state สำหรับโหมดแก้ไข
         setEditedTitle(fetchedItem.title || '');
         setEditedContent(fetchedItem.content || '');
         setEditedSummary(fetchedItem.summary || '');
-        setEditedTags(fetchedItem.tags ? fetchedItem.tags.join(', ') : '');
-        // ตั้งค่า Image URL สำหรับแก้ไข
+        setEditedTags(fetchedItem.tags || []);
         setEditedImageUrl(fetchedItem.imageUrl || '');
       } else {
         setError(`ไม่พบเนื้อหา (ID: ${itemId})`);
@@ -73,41 +89,31 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
     }
   }, [itemId]);
 
-  // --- New logic for display image URL with Cloudinary transformations ---
   const displayImageUrl = useMemo(() => {
     if (!item?.imageUrl) {
-      return 'https://picsum.photos/800/600?grayscale'; // Fallback if no image URL
+      return 'https://picsum.photos/800/600?grayscale';
     }
-
     const originalUrl = item.imageUrl;
-
-    // Apply transformations only if it's a Cloudinary URL
     if (originalUrl.includes('res.cloudinary.com/') && originalUrl.includes('/upload/')) {
       try {
         const parts = originalUrl.split('/upload/');
         const baseUrl = parts[0] + '/upload/';
         const pathAfterUpload = parts[1];
         const segments = pathAfterUpload.split('/');
-        let newPathAfterUpload = pathAfterUpload; // Default to original path
-
+        let newPathAfterUpload = pathAfterUpload;
         if (segments.length > 0) {
           let firstSegment = segments[0];
           const desiredTransformations = "q_auto,f_auto";
-
-          // Check if the first segment is a version number (e.g., v12345)
           if (/^v\d+$/.test(firstSegment)) {
-            // Insert transformations before the version number
             newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
           } else if (firstSegment.includes('_') || firstSegment.includes(',')) {
-            // Existing transformations are present, add/replace q_auto and f_auto
             let existingParamsArray = firstSegment.split(',').filter(param =>
-              !param.startsWith('q_') && !param.startsWith('f_') // Remove existing quality/format params
+              !param.startsWith('q_') && !param.startsWith('f_')
             );
             const newParamsArray = [desiredTransformations, ...existingParamsArray.filter(p => p.trim() !== '')];
             firstSegment = newParamsArray.join(',');
             newPathAfterUpload = [firstSegment, ...segments.slice(1)].join('/');
           } else {
-            // No version or transformations, insert at the beginning of the path
             newPathAfterUpload = `${desiredTransformations}/${pathAfterUpload}`;
           }
           return baseUrl + newPathAfterUpload;
@@ -116,17 +122,13 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
         console.warn("Failed to modify Cloudinary image URL for display:", e);
       }
     }
-
-    // For non-Cloudinary URLs or if modification fails, return the original URL
     return originalUrl;
-  }, [item?.imageUrl]); // Recalculate when item.imageUrl changes
-  // --- End new logic ---
+  }, [item?.imageUrl]);
 
   useEffect(() => {
     fetchItem();
   }, [fetchItem]);
 
-  // Prepare items for the sidebar
   const sidebarItems = useMemo(() => infographics.slice(0, 20), [infographics]);
 
   const openImageInModal = (src: string | undefined | null) => {
@@ -144,28 +146,17 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
   const handleSaveChanges = async () => {
     if (!item || !itemId) {
       alert('ไม่พบข้อมูล Item หรือ Item ID ที่จะอัปเดต');
-      console.warn('handleSaveChanges aborted: item or itemId is null/undefined.', { item, itemId });
       return;
     }
-    console.log('Attempting to save changes for itemId:', itemId);
-    console.log('Title to be saved:', editedTitle);
-    console.log('Content to be saved:', editedContent);
-    console.log('Summary to be saved:', editedSummary);
-    console.log('Tags to be saved:', editedTags);
-
     try {
-      // แปลง editedTags เป็น Array โดยแยกด้วย comma และตัดช่องว่างออก
-      const tagsArray = editedTags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
-      // update title, content, summary และ tags
       const updates = { 
         title: editedTitle, 
         content: editedContent, 
         summary: editedSummary,
-        tags: tagsArray,
-        imageUrl: editedImageUrl   // เพิ่มการอัปเดต imageUrl ด้วย
+        tags: editedTags,
+        imageUrl: editedImageUrl
       };
-      console.log('Sending updates to Supabase:', updates);
-
+      
       const { data: updateData, error: updateError } = await supabase
         .from('infographics')
         .update(updates)
@@ -173,37 +164,24 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
         .select()
         .single();
 
-      if (updateError) {
-        console.error('Supabase error updating content (FULL ERROR OBJECT):', JSON.stringify(updateError, null, 2));
-        const pgError = updateError as any;
-        alert(
-          `เกิดข้อผิดพลาดในการบันทึกข้อมูล: ${pgError.message}\n` +
-          (pgError.code ? `Code: ${pgError.code}\n` : '') +
-          (pgError.details ? `Details: ${pgError.details}\n` : '') +
-          (pgError.hint ? `Hint: ${pgError.hint}` : '')
-        );
-        return;
-      }
+      if (updateError) throw updateError;
+      
       if (updateData) {
         alert('บันทึกข้อมูลสำเร็จ!');
-        console.log('Data updated successfully:', updateData);
         setIsEditMode(false);
         setItem(updateData as Infographic);
         onItemUpdate(updateData as Infographic);
-        // เรียก re-fetch เพื่อดึงข้อมูลล่าสุด
         reFetchInfographics();
       } else {
         alert('ไม่สามารถอัปเดตข้อมูลได้ หรือไม่พบข้อมูลหลังอัปเดต');
-        console.warn('Update seemed to succeed but no data was returned.', { updateData });
       }
     } catch (err) {
-      const e = err as Error;
-      console.error('Client-side or Network error during handleSaveChanges:', e);
-      alert(`ไม่สามารถบันทึกข้อมูลได้ (เกิดข้อผิดพลาดฝั่ง Client หรือ Network): ${e.message}`);
+      const e = err as any;
+      console.error('Error during handleSaveChanges:', e);
+      alert(`ไม่สามารถบันทึกข้อมูลได้: ${e.message}`);
     }
   };
 
-  // 3. นิยาม handleContentClick
   const handleContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (target.tagName === 'IMG' && target.classList.contains('clickable-content-image')) {
@@ -214,6 +192,22 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
     }
   };
 
+  const handleAddTag = () => {
+    const tagToAdd = currentTagSelection === OTHER_TAG_OPTION
+      ? customTag.trim()
+      : currentTagSelection;
+
+    if (tagToAdd && !editedTags.includes(tagToAdd)) {
+      setEditedTags([...editedTags, tagToAdd]);
+    }
+    
+    setCustomTag('');
+    setCurrentTagSelection(predefinedTags[0]);
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setEditedTags(editedTags.filter(tag => tag !== tagToRemove));
+  };
 
   if (loading) {
     return (
@@ -243,7 +237,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
 
   return (
     <div className="flex flex-col md:flex-row">
-      {/* Sidebar */}
       <aside className="hidden md:block md:w-[15%] p-4 border-r border-gray-200 bg-gray-50 md:h-screen md:sticky md:top-0 overflow-y-auto">
         <img
           src="https://res.cloudinary.com/dzksawh1d/image/upload/q_auto,f_auto,w_800/v1750155546/326481288_1393570211463146_8610728916042085217_n_pamzmy.jpg"
@@ -273,14 +266,13 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
           </Link>
         </div>
       </aside>
-
-      {/* Main Content Area for Item Detail */}
-      <div className="w-full"> {/* Main content takes full width on mobile, 85% on md+ */}
+      
+      <div className="w-full">
         <Helmet>
           <title>{item.title ? `${item.title} - คลังความรู้เกษตร Infographic` : `รายละเอียดเนื้อหา - คลังความรู้เกษตร Infographic`}</title>
           <meta property="og:title" content={item.title || 'ดูเนื้อหา'} />
           <meta property="og:description" content={item.summary || 'รายละเอียดเนื้อหา'} />
-          <meta property="og:image" content={item.imageUrl || 'https://dldiedktrkbwpqznxdwk.supabase.co/storage/v1/object/public/images/default-og-kaset.png'} /> {/* Default OG Image */}
+          <meta property="og:image" content={item.imageUrl || 'https://dldiedktrkbwpqznxdwk.supabase.co/storage/v1/object/public/images/default-og-kaset.png'} />
           <meta property="og:url" content={window.location.href} />
           <meta property="og:type" content="article" />
         </Helmet>
@@ -290,13 +282,15 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
             {item.imageUrl && (
               <img
                 className="w-auto h-auto object-contain max-h-[50vh] cursor-pointer self-center"
-                src={displayImageUrl} // Use the potentially transformed URL for initial display
+                src={displayImageUrl}
                 alt={item.title}
                 onClick={() => openImageInModal(item.imageUrl)}
                 onError={(e) => (e.currentTarget.src = 'https://picsum.photos/800/600?grayscale')}
               />
             )}
             <div className="p-6 md:p-10 max-w-full flex-1 overflow-y-auto">
+              
+              {/* === START: EDIT MODE === */}
               {isAdmin && isEditMode ? (
                 <>
                   <div className="mb-4">
@@ -308,15 +302,58 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                       onChange={(e) => setEditedTitle(e.target.value)}
                     />
                   </div>
+                  
+                  {/* === FIXED: TAG EDITOR SECTION === */}
                   <div className="mb-4">
-                    <label className="block mb-1 font-medium">Tags (comma-separated):</label>
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-md p-3" 
-                      value={editedTags}
-                      onChange={(e) => setEditedTags(e.target.value)}
-                    />
+                    <label htmlFor="tag-select" className="block text-sm font-medium text-gray-700">
+                      แท็ก (Tags)
+                    </label>
+                    <div className="flex flex-wrap gap-2 mt-2 mb-2 min-h-[2.5rem] p-2 border border-gray-200 rounded-md">
+                      {editedTags.map(tag => (
+                        <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-green-light text-brand-green-dark">
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(tag)}
+                            className="ml-2 -mr-1 flex-shrink-0 h-4 w-4 rounded-full inline-flex items-center justify-center text-brand-green-dark hover:bg-brand-green-lighter hover:text-brand-green-darker focus:outline-none focus:bg-brand-green-dark focus:text-white transition-colors"
+                            aria-label={`Remove ${tag}`}
+                          >
+                            <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                              <path strokeLinecap="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
+                            </svg>
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    {/* ADDED: Input for adding new tags */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <select 
+                        id="tag-select"
+                        value={currentTagSelection} 
+                        onChange={(e) => setCurrentTagSelection(e.target.value)}
+                        className="flex-grow border border-gray-300 rounded-md p-2"
+                      >
+                        {predefinedTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                        <option value={OTHER_TAG_OPTION}>{OTHER_TAG_OPTION}</option>
+                      </select>
+                      {currentTagSelection === OTHER_TAG_OPTION && (
+                        <input
+                          type="text"
+                          value={customTag}
+                          onChange={(e) => setCustomTag(e.target.value)}
+                          placeholder="ระบุแท็กอื่นๆ"
+                          className="flex-grow border border-gray-300 rounded-md p-2"
+                        />
+                      )}
+                      <button 
+                        onClick={handleAddTag} 
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex-shrink-0"
+                      >
+                        เพิ่มแท็ก
+                      </button>
+                    </div>
                   </div>
+
                   <div className="mb-4">
                     <label className="block mb-1 font-medium">Summary:</label>
                     <textarea
@@ -352,10 +389,11 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                     <button
                       onClick={() => {
                         setIsEditMode(false);
+                        // === FIXED: Reset state correctly ===
                         setEditedTitle(item.title || '');
                         setEditedContent(item.content || '');
                         setEditedSummary(item.summary || '');
-                        setEditedTags(item.tags ? item.tags.join(', ') : '');
+                        setEditedTags(item.tags || []);
                         setEditedImageUrl(item.imageUrl || '');
                       }}
                       className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
@@ -365,6 +403,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                   </div>
                 </>
               ) : (
+              /* === START: DISPLAY MODE === */
                 <>
                   {item.title && (
                     <h1 className="text-3xl font-bold text-brand-gray-darktext mb-4">{item.title}</h1>
@@ -385,10 +424,11 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
               {isAdmin && !isEditMode && (
                 <button
                   onClick={() => {
+                    // === FIXED: Ensure tags are an array when entering edit mode ===
                     setEditedTitle(item.title || '');
                     setEditedContent(item.content || '');
                     setEditedSummary(item.summary || '');
-                    setEditedTags(item.tags ? item.tags.join(', ') : '');
+                    setEditedTags(item.tags || []);
                     setEditedImageUrl(item.imageUrl || '');
                     setIsEditMode(true);
                   }}
@@ -421,7 +461,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
               <div className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-lg shadow-xl">
                 <img
                   className="w-auto h-auto max-w-full max-h-[calc(90vh-4rem)] object-contain"
-                  src={modalImageSrc} // This is the original URL passed from openImageInModal
+                  src={modalImageSrc}
                   alt={modalImageSrc === item.imageUrl ? item.title : "ภาพขยาย"}
                   onError={(e) => {
                     const imgElement = e.currentTarget;
