@@ -14,6 +14,7 @@ const InfographicsPage: React.FC<InfographicsPageProps> = ({ infographics }) => 
       pageType="infographics"
       filterByCategory={DisplayCategory.INFOGRAPHIC}
       showBackButton={true}
+      itemsPerPage={30}
     />
   );
 };
