@@ -11,18 +11,18 @@ import './styles/ItemDetailPage.css';
 marked.setOptions({ breaks: true });
 
 const predefinedTags = [
-  'ศัตรูพืช (Plant Pests)',
-  'โรคพืช (Plant Diseases)',
-  'เทคนิคเพาะปลูก (Cultivation Techniques)',
-  'ทั่วไป (General)',
-  'การผลิตเชื้อ (Pathogen Production / Microbial Production)',
-  'วิสาหกิจชุมชน (Community Enterprise)',
-  'หยุดเผา (Stop Burning)',
-  'แมลง (Insects)',
-  'สมุนไพร (Herbs)',
-  'ความรู้เกษตร (Agricultural Knowledge)',
-  'เพาะปลูก (Cultivation)',
-  'ไม้ผล (Fruit Trees)',
+  'ศัตรูพืช',
+  'โรคพืช',
+  'เทคนิคเพาะปลูก',
+  'ทั่วไป',
+  'การผลิตเชื้อ',
+  'วิสาหกิจชุมชน',
+  'หยุดเผา',
+  'แมลง',
+  'สมุนไพร',
+  'ความรู้เกษตร',
+  'เพาะปลูก',
+  'ไม้ผล',
 ];
 const OTHER_TAG_OPTION = 'และอื่นๆ';
 
