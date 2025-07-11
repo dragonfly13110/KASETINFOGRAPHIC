@@ -14,6 +14,7 @@ const TechnologyPage: React.FC<TechnologyPageProps> = ({ infographics }) => {
       pageType="technology"
       filterByCategory={DisplayCategory.TECHNOLOGY}
       showBackButton={true}
+      itemsPerPage={20}
     />
   );
 };

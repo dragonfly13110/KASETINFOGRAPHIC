@@ -14,6 +14,7 @@ const ArticlesPage: React.FC<ArticlesPageProps> = ({ infographics }) => {
       pageType="articles"
       filterByCategory={DisplayCategory.ARTICLE}
       showBackButton={true}
+      itemsPerPage={20}
     />
   );
 };

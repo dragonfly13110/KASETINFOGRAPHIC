@@ -24,6 +24,7 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>(ALL_TAGS_OPTION);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
 
   const pageInfo = PAGE_DESCRIPTIONS[pageType];
 
@@ -52,6 +53,11 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
     setCurrentPage(1);
   }, [searchTerm, selectedTag, filterByCategory, infographics, itemsPerPage]);
 
+  // Sync page input with current page
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
+
   const totalPages = useMemo(() => {
     if (!itemsPerPage || filteredInfographics.length === 0) return 1;
     return Math.ceil(filteredInfographics.length / itemsPerPage);
@@ -63,6 +69,28 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
     const endIndex = startIndex + itemsPerPage;
     return filteredInfographics.slice(startIndex, endIndex);
   }, [filteredInfographics, currentPage, itemsPerPage]);
+
+  const handleGoToPage = () => {
+    const pageNumber = parseInt(pageInput, 10);
+    if (isNaN(pageNumber) || pageInput.trim() === '') {
+      setPageInput(String(currentPage)); // Reset to current page if input is invalid/empty
+      return;
+    }
+    const newPage = Math.max(1, Math.min(pageNumber, totalPages));
+    setCurrentPage(newPage);
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Allow only numeric input
+    setPageInput(e.target.value.replace(/[^0-9]/g, ''));
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleGoToPage();
+      e.currentTarget.blur(); // Remove focus from input
+    }
+  };
 
   // สำหรับ sidebar เราสามารถใช้ infographics ทั้งหมด (หรือเปลี่ยนเป็น filteredInfographics ได้)
   const sidebarItems = infographics.slice(0, 20);
@@ -157,8 +185,18 @@ const SharedInfographicLayout: React.FC<SharedInfographicLayoutProps> = ({
                     >
                       ก่อนหน้า
                     </button>
-                    <span className="text-sm text-gray-700">
-                      หน้า {currentPage} จาก {totalPages}
+                    <span className="flex items-center space-x-2 text-sm text-gray-700">
+                      <span>หน้า</span>
+                      <input
+                        type="text"
+                        value={pageInput}
+                        onChange={handlePageInputChange}
+                        onKeyDown={handlePageInputKeyDown}
+                        onBlur={handleGoToPage}
+                        className="w-14 rounded-md border border-gray-300 py-1 px-2 text-center focus:border-brand-green focus:ring-brand-green sm:text-sm"
+                        aria-label={`Current page, page ${currentPage} of ${totalPages}`}
+                      />
+                      <span>จาก {totalPages}</span>
                     </span>
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
