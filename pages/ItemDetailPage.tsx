@@ -9,16 +9,15 @@ import './styles/ItemDetailPage.css';
 
 // =========================================================
 // === START: CORRECTED MARKED.JS CONFIGURATION          ===
-// === โค้ดที่แก้ไขแล้ว: ทำให้เรียบง่ายและทำงานได้ถูกต้อง   ===
+// === โค้ดที่แก้ไขแล้วให้ตรงตาม Error ที่แจ้งมา         ===
 // =========================================================
 const renderer = new marked.Renderer();
-renderer.image = ({ href, title, text }: { href: string | null; title: string | null; text: string; }) => {
-  // สร้างแท็ก img แบบมาตรฐาน พร้อม class สำหรับการจัดสไตล์และทำให้คลิกได้
-  // เราจะใช้ href ที่ได้มาตรงๆ โดยไม่แปลงค่าที่ซับซ้อน เพื่อความแน่นอน
-  const imageUrl = href || '';
-  const altText = text || 'image in content'; // ใส่ alt text พื้นฐานกันไว้
 
-  // ใช้ class "content-image" เพื่อให้ CSS และ JS เข้าถึงได้
+// แก้ไขตรงนี้: รับค่าเป็น Object เดียว ({ href, title, text })
+renderer.image = ({ href, title, text }) => {
+  const imageUrl = href || '';
+  const altText = text || 'image in content';
+
   return `<img src="${imageUrl}" alt="${altText}" title="${title || altText}" class="content-image" loading="lazy" />`;
 };
 
@@ -30,7 +29,6 @@ marked.setOptions({
 // =========================================================
 // === END: CORRECTED MARKED.JS CONFIGURATION            ===
 // =========================================================
-
 
 const predefinedTags = [
   'ศัตรูพืช',
@@ -205,7 +203,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
 
   const handleContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
-    // ฟังก์ชันนี้จะทำงานได้ถูกต้อง เพราะรูปภาพมี class "content-image"
     if (target.tagName === 'IMG' && target.classList.contains('content-image')) {
       const imgSrc = (target as HTMLImageElement).src;
       if (imgSrc) {
@@ -473,10 +470,10 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
           </article>
 
           {isModalOpen && modalImageSrc && (
-            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-              <div className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-lg shadow-xl">
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={closeModal}>
+              <div className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <img
-                  className="w-auto h-auto max-w-full max-h-[calc(90vh-4rem)] object-contain"
+                  className="max-w-full max-h-full object-contain"
                   src={modalImageSrc}
                   alt={modalImageSrc === item.imageUrl ? item.title : "ภาพขยาย"}
                   onError={(e) => {
