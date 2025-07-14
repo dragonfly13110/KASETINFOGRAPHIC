@@ -12,7 +12,7 @@ import './styles/ItemDetailPage.css';
 // === โค้ดที่แก้ไขแล้ว: ทำให้เรียบง่ายและทำงานได้ถูกต้อง   ===
 // =========================================================
 const renderer = new marked.Renderer();
-renderer.image = (href, title, text) => {
+renderer.image = ({ href, title, text }: { href: string | null; title: string | null; text: string; }) => {
   // สร้างแท็ก img แบบมาตรฐาน พร้อม class สำหรับการจัดสไตล์และทำให้คลิกได้
   // เราจะใช้ href ที่ได้มาตรงๆ โดยไม่แปลงค่าที่ซับซ้อน เพื่อความแน่นอน
   const imageUrl = href || '';
