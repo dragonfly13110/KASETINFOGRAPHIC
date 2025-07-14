@@ -471,9 +471,9 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
 
           {isModalOpen && modalImageSrc && (
             <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={closeModal}>
-              <div className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="relative bg-white rounded-lg shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <img
-                  className="max-w-full max-h-full object-contain"
+                  className="block object-contain max-w-[90vw] max-h-[90vh] rounded-lg"
                   src={modalImageSrc}
                   alt={modalImageSrc === item.imageUrl ? item.title : "ภาพขยาย"}
                   onError={(e) => {
