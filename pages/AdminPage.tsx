@@ -136,51 +136,52 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     setSubmitMessageType(type);
   };
 
+  // =================================================================
+  // === THIS IS THE MODIFIED FUNCTION / นี่คือฟังก์ชันที่ถูกแก้ไข ===
+  // =================================================================
   const handleContentPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    event.preventDefault(); // ป้องกันการวางแบบปกติทุกกรณี เพื่อให้เราจัดการเอง
     const clipboardData = event.clipboardData;
     let textToInsert = '';
-    let useHtmlExtractedUrl = false;
 
-    // 1. ตรวจสอบข้อมูล HTML ใน Clipboard
-    const htmlData = clipboardData.getData('text/html');
-    if (htmlData) {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = htmlData;
-      const imgElement = tempDiv.querySelector('img');
+    // ดึงข้อมูลแบบ Plain Text จาก Clipboard
+    const plainTextData = clipboardData.getData('text/plain');
 
-      if (imgElement && imgElement.src) {
-        // 2. ตรวจสอบว่าเป็น URL รูปภาพที่สมบูรณ์ (http/https)
-        if (imgElement.src.startsWith('http://') || imgElement.src.startsWith('https://')) {
-          textToInsert = imgElement.src;
-          useHtmlExtractedUrl = true;
-        }
-      }
-    }
+    if (plainTextData) {
+      // ตรวจสอบว่าข้อความที่วางเป็น URL ของรูปภาพหรือไม่
+      const isImageUrl = 
+        (plainTextData.startsWith('http://') || plainTextData.startsWith('https://')) &&
+        /\.(jpeg|jpg|gif|png|webp)$/i.test(plainTextData.trim());
 
-    // 3. ถ้าไม่พบ URL จาก HTML หรือไม่ต้องการใช้ ให้ใช้ Plain Text แทน
-    if (!useHtmlExtractedUrl) {
-      const plainTextData = clipboardData.getData('text/plain');
-      if (plainTextData) {
+      if (isImageUrl) {
+        // ถ้าเป็น URL รูปภาพ ให้แปลงเป็น Markdown image syntax
+        textToInsert = `![](${plainTextData.trim()})\n\n`;
+      } else {
+        // ถ้าไม่ใช่ ก็ใช้ข้อความธรรมดาที่วางลงมาเหมือนเดิม
         textToInsert = plainTextData;
       }
     }
 
-    if (textToInsert) {
-      event.preventDefault(); // ป้องกันการวางแบบปกติ
-      const textarea = event.currentTarget;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const currentValue = textarea.value;
-      const newValue = currentValue.substring(0, start) + textToInsert + currentValue.substring(end);
-      
-      setContent(newValue); // อัปเดต State ของ React
+    if (!textToInsert) return;
 
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
-      }, 0);
-    }
-    // ถ้า textToInsert ยังคงว่างเปล่า (เช่น Clipboard ว่าง) จะไม่มีการดำเนินการใดๆ และการวางแบบปกติ (ถ้ามี) จะไม่เกิดขึ้นเนื่องจากไม่ได้เรียก preventDefault ในกรณีนอก if
+    // ส่วนของการนำข้อความที่แปลงแล้วไปใส่ใน textarea
+    const textarea = event.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = textarea.value;
+    const newValue = currentValue.substring(0, start) + textToInsert + currentValue.substring(end);
+    
+    setContent(newValue); // อัปเดต State ของ React
+
+    // ย้าย cursor ไปอยู่ท้ายข้อความที่เพิ่งวาง
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
+    }, 0);
   };
+  // =================================================================
+  // === END OF MODIFIED FUNCTION / สิ้นสุดฟังก์ชันที่ถูกแก้ไข      ===
+  // =================================================================
+
 
   // --- Event Handlers ---
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
@@ -195,7 +196,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       if (error) {
         setAuthError(error.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       }
-      // setIsAuthenticated(true); // Auth listener จะจัดการส่วนนี้
     } catch (err: any) {
       setAuthError(err.message || 'เกิดข้อผิดพลาดในการล็อกอิน โปรดลองอีกครั้ง');
     } finally {
@@ -221,12 +221,11 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
     }
 
     setUploadedFile(file);
-    setExternalImageUrl(''); // เคลียร์ URL ภายนอกถ้ามีการเลือกไฟล์
+    setExternalImageUrl(''); 
     setIsUploadingImage(true);
-    setUploadedFileUrl(''); // เคลียร์ URL ที่อัปโหลดสำเร็จก่อนหน้าก่อนการพยายามครั้งใหม่
-    showMessage('', 'success'); // Clear previous messages (type is required, but message is empty)
-
-    // Get a random Cloudinary account configuration for this upload
+    setUploadedFileUrl(''); 
+    showMessage('', 'success'); 
+    
     const cloudinaryConfig = getRandomCloudinaryConfig();
     if ('error' in cloudinaryConfig && cloudinaryConfig.error) {
         showMessage(`เกิดข้อผิดพลาด: ${cloudinaryConfig.error}`, 'error');
@@ -238,8 +237,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', cloudinaryConfig.uploadPreset);
-      // หากจำเป็นต้องใช้ API Key กับ Unsigned Preset (ปกติไม่จำเป็น)
-      // formData.append('api_key', CLOUDINARY_API_KEY);
 
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`,
@@ -292,7 +289,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       setTags([...tags, tagToAdd]);
     }
     
-    // Reset inputs for next tag
     setCustomTag('');
     setCurrentTagSelection(predefinedTags[0]);
   };
@@ -304,7 +300,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
 
   const handleSubmitInfographic = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    showMessage('', ''); // Clear previous messages
+    showMessage('', ''); 
 
     if (!title || !summary || !content || !displayCategory) {
       showMessage('กรุณากรอกข้อมูลให้ครบทุกช่องที่มีเครื่องหมาย *', 'error');
@@ -316,7 +312,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
       return;
     }
 
-    // Prevent submission if a file was selected but upload failed (no URL)
     if (uploadedFile && !uploadedFileUrl) {
       showMessage('การอัปโหลดรูปภาพล้มเหลว โปรดลองอัปโหลดอีกครั้ง หรือลบรูปภาพที่เลือกออก', 'error');
       return;
@@ -425,7 +420,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
           <div className={`mb-6 p-4 rounded-md text-sm ${
             submitMessageType === 'success' ? 'bg-green-100 text-green-700 border border-green-300' :
             submitMessageType === 'error' ? 'bg-red-100 text-red-700 border border-red-300' :
-            'bg-blue-100 text-blue-700 border border-blue-300' // Default/info
+            'bg-blue-100 text-blue-700 border border-blue-300'
           }`}>
             {submitMessage}
           </div>
@@ -475,7 +470,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               type="file"
               id="uploadImage"
               ref={fileInputRef}
-              accept="image/*,.jpeg,.jpg,.png,.gif,.webp" // ระบุประเภทไฟล์ที่อนุญาต
+              accept="image/*,.jpeg,.jpg,.png,.gif,.webp"
               onChange={handleFileChange}
               className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-green-light file:text-brand-green-dark hover:file:bg-brand-green-lighter disabled:opacity-50"
               disabled={isUploadingImage}
@@ -524,7 +519,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              onPaste={handleContentPaste} // เพิ่ม onPaste handler
+              onPaste={handleContentPaste} // ใช้ฟังก์ชันที่แก้ไขแล้ว
               rows={6}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-green focus:border-brand-green sm:text-sm"
@@ -554,7 +549,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
             <label htmlFor="tag-select" className="block text-sm font-medium text-gray-700">
               แท็ก (Tags)
             </label>
-            {/* Display selected tags */}
             <div className="flex flex-wrap gap-2 mt-2 mb-2 min-h-[2.5rem]">
               {tags.map(tag => (
                 <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-green-light text-brand-green-dark">
@@ -573,7 +567,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               ))}
             </div>
 
-            {/* Input for adding new tags */}
             <div className="flex items-start sm:items-center gap-2 mt-1 flex-col sm:flex-row">
               <div className="w-full sm:w-auto sm:flex-grow">
                 <select
@@ -616,7 +609,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onAddInfographic }) => {
               type="button"
               onClick={() => {
                 resetFormFields();
-                navigate('/'); // หรือแค่ resetFormFields(); ถ้าต้องการให้อยู่หน้านี้
+                navigate('/');
               }}
               className="mr-4 px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green disabled:opacity-50"
               disabled={isSubmittingForm || isUploadingImage}

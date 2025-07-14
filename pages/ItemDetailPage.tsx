@@ -7,8 +7,30 @@ import { IconArrowLeft } from '../components/icons';
 import { supabase } from '../src/supabaseClient';
 import './styles/ItemDetailPage.css';
 
-// ตั้งค่า marked ให้รองรับการแปลง newlines เป็น <br>
-marked.setOptions({ breaks: true });
+// =========================================================
+// === START: CORRECTED MARKED.JS CONFIGURATION          ===
+// === โค้ดที่แก้ไขแล้ว: ทำให้เรียบง่ายและทำงานได้ถูกต้อง   ===
+// =========================================================
+const renderer = new marked.Renderer();
+renderer.image = (href, title, text) => {
+  // สร้างแท็ก img แบบมาตรฐาน พร้อม class สำหรับการจัดสไตล์และทำให้คลิกได้
+  // เราจะใช้ href ที่ได้มาตรงๆ โดยไม่แปลงค่าที่ซับซ้อน เพื่อความแน่นอน
+  const imageUrl = href || '';
+  const altText = text || 'image in content'; // ใส่ alt text พื้นฐานกันไว้
+
+  // ใช้ class "content-image" เพื่อให้ CSS และ JS เข้าถึงได้
+  return `<img src="${imageUrl}" alt="${altText}" title="${title || altText}" class="content-image" loading="lazy" />`;
+};
+
+// ตั้งค่า marked ให้ใช้ renderer ที่เราสร้าง และรองรับการขึ้นบรรทัดใหม่
+marked.setOptions({
+  renderer: renderer,
+  breaks: true,
+});
+// =========================================================
+// === END: CORRECTED MARKED.JS CONFIGURATION            ===
+// =========================================================
+
 
 const predefinedTags = [
   'ศัตรูพืช',
@@ -71,7 +93,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
       if (data) {
         const fetchedItem = data as Infographic;
         setItem(fetchedItem);
-        // ตั้งค่า state สำหรับโหมดแก้ไข
         setEditedTitle(fetchedItem.title || '');
         setEditedContent(fetchedItem.content || '');
         setEditedSummary(fetchedItem.summary || '');
@@ -184,7 +205,8 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
 
   const handleContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
-    if (target.tagName === 'IMG' && target.classList.contains('clickable-content-image')) {
+    // ฟังก์ชันนี้จะทำงานได้ถูกต้อง เพราะรูปภาพมี class "content-image"
+    if (target.tagName === 'IMG' && target.classList.contains('content-image')) {
       const imgSrc = (target as HTMLImageElement).src;
       if (imgSrc) {
         openImageInModal(imgSrc);
@@ -290,7 +312,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
             )}
             <div className="p-6 md:p-10 max-w-full flex-1 overflow-y-auto">
               
-              {/* === START: EDIT MODE === */}
               {isAdmin && isEditMode ? (
                 <>
                   <div className="mb-4">
@@ -303,7 +324,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                     />
                   </div>
                   
-                  {/* === FIXED: TAG EDITOR SECTION === */}
                   <div className="mb-4">
                     <label htmlFor="tag-select" className="block text-sm font-medium text-gray-700">
                       แท็ก (Tags)
@@ -325,7 +345,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                         </span>
                       ))}
                     </div>
-                    {/* ADDED: Input for adding new tags */}
                     <div className="flex items-center gap-2 mt-2">
                       <select 
                         id="tag-select"
@@ -389,7 +408,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                     <button
                       onClick={() => {
                         setIsEditMode(false);
-                        // === FIXED: Reset state correctly ===
                         setEditedTitle(item.title || '');
                         setEditedContent(item.content || '');
                         setEditedSummary(item.summary || '');
@@ -403,7 +421,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                   </div>
                 </>
               ) : (
-              /* === START: DISPLAY MODE === */
                 <>
                   {item.title && (
                     <h1 className="text-3xl font-bold text-brand-gray-darktext mb-4">{item.title}</h1>
@@ -412,7 +429,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
                     <p className="text-lg text-brand-gray-darktext mb-4">{item.summary}</p>
                   )}
                   <div
-                    className="content-container whitespace-pre-line text-brand-gray-text leading-relaxed space-y-4 break-words"
+                    className="content-container whitespace-pre-line text-brand-gray-text leading-relaxed space-y-4"
                     onClick={handleContentClick}
                     dangerouslySetInnerHTML={{
                       __html: marked(item.content || '')
@@ -424,7 +441,6 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({ infographics, isAdmin, 
               {isAdmin && !isEditMode && (
                 <button
                   onClick={() => {
-                    // === FIXED: Ensure tags are an array when entering edit mode ===
                     setEditedTitle(item.title || '');
                     setEditedContent(item.content || '');
                     setEditedSummary(item.summary || '');

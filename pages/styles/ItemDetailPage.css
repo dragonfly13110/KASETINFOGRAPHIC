@@ -1,6 +1,42 @@
-.content-container ul {
-  list-style-type: disc;
-  margin-left: 1.5rem;
+/* 
+  สไตล์สำหรับรูปภาพที่อยู่ในส่วนเนื้อหาหลัก (.content-container)
+  เราจะใช้ selector ที่ชื่อว่า .content-image ซึ่งเรากำหนดไว้ใน ItemDetailPage.tsx
+*/
+.content-container .content-image {
+  /* --- ส่วนที่สำคัญที่สุดในการแก้ปัญหารูปใหญ่เกิน --- */
+  
+  /* 1. กำหนดความสูงสูงสุดไม่ให้เกิน 80% ของหน้าจอ */
+  max-height: 80vh; 
+  
+  /* 2. กำหนดความกว้างสูงสุดไม่ให้เกินพื้นที่ของเนื้อหา */
+  max-width: 100%;
+
+  /* 3. ทำให้สัดส่วนของภาพถูกต้องเสมอ */
+  width: auto; 
+  height: auto;
+
+  /* --- ส่วนตกแต่งเพื่อความสวยงาม --- */
+  
+  /* จัดรูปให้อยู่กึ่งกลาง */
+  display: block; 
+  margin-left: auto;
+  margin-right: auto;
+  
+  /* ทำให้ขอบมน */
+  border-radius: 0.5rem; /* 8px */
+
+  /* เพิ่มเงา */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+  /* เพิ่มระยะห่างบน-ล่าง */
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  
+  /* เปลี่ยน cursor เป็นรูปมือ เพื่อบอกว่าคลิกเพื่อขยายได้ */
+  cursor: pointer;
 }
 
-/* Add any other styles specific to ItemDetailPage here */
+/* สไตล์ทั่วไปสำหรับตัวครอบเนื้อหา */
+.content-container {
+  overflow-wrap: break-word;
+}
