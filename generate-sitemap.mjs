@@ -26,13 +26,14 @@ async function generateSitemap() {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // 3. กำหนดรายการหน้าเว็บแบบ Static
+    // IMPORTANT: Keep this list in sync with the routes defined in App.tsx
     const staticPages = [
-      '/',
-      '/#/infographics',
-      '/#/articles',
-      '/#/technology',
-      '/#/admin',
-      '/#/all-stories',
+      '/', // Homepage
+      '/infographics',
+      '/articles',
+      '/technology',
+      '/admin',
+      '/all-stories',
     ].map(p => `${BASE_URL}${p}`);
 
     let allUrls = staticPages.map(url => ({ loc: url, lastmod: today }));
@@ -48,7 +49,7 @@ async function generateSitemap() {
       }
 
       const dynamicUrls = infographics.map(item => ({
-        loc: `${BASE_URL}/#/item/${item.id}`,
+        loc: `${BASE_URL}/item/${item.id}`,
         lastmod: item.updated_at ? new Date(item.updated_at).toISOString().split('T')[0] : today,
       }));
 
@@ -67,7 +68,7 @@ async function generateSitemap() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${allUrls.map(urlData => {
     const isHomePage = urlData.loc === BASE_URL || urlData.loc === `${BASE_URL}/`;
-    const isItemPage = urlData.loc.includes('/#/item/');
+    const isItemPage = urlData.loc.includes('/item/');
     const priority = isHomePage ? '1.0' : isItemPage ? '0.8' : '0.9';
 
     return `

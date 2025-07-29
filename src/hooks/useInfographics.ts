@@ -23,6 +23,7 @@ export function useInfographics() {
       setInfographics(data || []);
     } catch (err: any) {
       console.error('Error fetching infographics:', err);
+      // Use the error message from Supabase directly for more specific feedback.
       setError(err.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล');
     } finally {
       setLoading(false);
@@ -34,27 +35,24 @@ export function useInfographics() {
   }, [fetchInfographics]);
 
   const addInfographic = async (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => {
-    // The component calling this function should wrap it in a try/catch block.
+    // This function will now throw an error on failure,
+    // which should be handled by a try/catch block in the component that calls it (e.g., AdminPage).
     const itemToAdd = {
       ...newInfo,
-      // Best Practice Tip: It's often better to let the database handle timestamps
-      // with a default value like `now()` or `CURRENT_TIMESTAMP`.
-      // This ensures data consistency regardless of the client's clock.
       date: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }),
     };
 
     const { data, error: supabaseError } = await supabase.from('infographics').insert([itemToAdd]).select().single();
 
     if (supabaseError) {
-      // Re-throw the error to be caught by the calling component's catch block.
+      // Throw the detailed error from Supabase to be caught by the UI component.
       throw supabaseError;
     }
 
     if (data) {
-      // Add the new item to the top of the list for immediate feedback
       setInfographics(prev => [data as Infographic, ...prev]);
     } else {
-      // Fallback if the insert operation doesn't return the new data
+      // Fallback in case insert doesn't return data
       fetchInfographics();
     }
   };

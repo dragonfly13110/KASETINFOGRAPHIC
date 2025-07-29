@@ -1,0 +1,14 @@
+# This configuration file is for Netlify.
+# It ensures that your Single-Page Application (SPA) routing works correctly with BrowserRouter.
+
+[build]
+  # This should match the "Publish directory" in your Netlify UI settings (usually "dist" for Vite).
+  publish = "dist"
+
+# The following redirect rule is essential for SPAs.
+# It redirects all paths that are not actual files to your index.html,
+# allowing React Router to handle the client-side routing.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

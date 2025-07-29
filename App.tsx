@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import KnowledgeLinks from './components/KnowledgeLinks'; // นำเข้าคอมโพเนนต์ KnowledgeLinks
@@ -47,7 +47,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
         <main className="flex-grow">
@@ -77,7 +77,7 @@ const App: React.FC = () => {
         <KnowledgeLinks /> {/* เพิ่ม KnowledgeLinks ก่อน Footer */}
         <Footer />
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

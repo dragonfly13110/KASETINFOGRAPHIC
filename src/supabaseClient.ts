@@ -1,22 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { Infographic } from './types';
 
-// ===================================================================================
-// Using your provided Supabase credentials directly for local development.
-// ===================================================================================
-
-const supabaseUrl = 'https://dldiedktrkbwpqznxdwk.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZGllZGt0cmtid3Bxem54ZHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1OTM4ODMsImV4cCI6MjA2NDE2OTg4M30.teFTNA7Zez_qUO9-wQALPdw_ULLmmfNhOlNHD_CdtHc';
+// Best Practice: Load credentials from environment variables.
+// This makes the code more secure and easier to manage across different environments (dev, prod).
+// These variables are loaded from your .env file by Vite.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
-  throw new Error(`Supabase URL is missing.`);
+  // Provide a more helpful error message for developers.
+  throw new Error("VITE_SUPABASE_URL is not defined. Please check your .env file.");
 }
 
 if (!supabaseAnonKey) {
-  throw new Error(`Supabase Anon Key is missing.`);
+  throw new Error("VITE_SUPABASE_ANON_KEY is not defined. Please check your .env file.");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Define a type for your database schema. This helps with TypeScript type safety.
 // This should align with the table created in your Supabase project.
@@ -39,9 +39,17 @@ export interface Database {
   };
 }
 
-export const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+/**
+ * Handles uploading an image file to Supabase storage.
+ * @param e The file input change event.
+ * @returns The public URL of the uploaded image.
+ * @throws An error if the upload fails.
+ */
+export const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>): Promise<string> => {
   const file = e.target.files?.[0];
-  if (!file) return;
+  if (!file) {
+    throw new Error("No file selected for upload.");
+  }
 
   // Sanitize the original file name to remove or replace invalid characters
   const originalFileName = file.name;
@@ -54,7 +62,10 @@ export const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) 
 
   if (error) {
     console.error('Error uploading image:', error.message); // Keep this for debugging
-    alert(`เกิดข้อผิดพลาดในการอัปโหลดภาพ: ${error.message}`);
-    return;
+    throw new Error(`เกิดข้อผิดพลาดในการอัปโหลดภาพ: ${error.message}`);
   }
+
+  // Return the public URL of the uploaded file
+  const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
+  return publicUrl;
 };
