@@ -23,13 +23,7 @@ export function useInfographics() {
       setInfographics(data || []);
     } catch (err: any) {
       console.error('Error fetching infographics:', err);
-      let fetchErrorMessage = 'เกิดข้อผิดพลาดในการดึงข้อมูล';
-      if (err && err.message) {
-        fetchErrorMessage = err.message;
-      } else if (typeof err === 'string') {
-        fetchErrorMessage = err;
-      }
-      setError(fetchErrorMessage);
+      setError(err.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล');
     } finally {
       setLoading(false);
     }
@@ -40,30 +34,28 @@ export function useInfographics() {
   }, [fetchInfographics]);
 
   const addInfographic = async (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => {
-    try {
-      const itemToAdd = {
-        ...newInfo,
-        date: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }),
-      };
+    // The component calling this function should wrap it in a try/catch block.
+    const itemToAdd = {
+      ...newInfo,
+      // Best Practice Tip: It's often better to let the database handle timestamps
+      // with a default value like `now()` or `CURRENT_TIMESTAMP`.
+      // This ensures data consistency regardless of the client's clock.
+      date: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }),
+    };
 
-      const { data, error: supabaseError } = await supabase.from('infographics').insert([itemToAdd]).select().single();
+    const { data, error: supabaseError } = await supabase.from('infographics').insert([itemToAdd]).select().single();
 
-      if (supabaseError) {
-        throw supabaseError;
-      }
+    if (supabaseError) {
+      // Re-throw the error to be caught by the calling component's catch block.
+      throw supabaseError;
+    }
 
-      if (data) {
-        setInfographics(prev => [data as Infographic, ...prev]);
-      } else {
-        fetchInfographics();
-      }
-    } catch (err: any) {
-      console.error('>>> EXPAND THIS OBJECT TO SEE SUPABASE ERROR DETAILS:', err);
-      let userMessage = 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล.';
-      if (err && typeof err === 'object' && err.message) {
-        userMessage += ` (ข้อความเบื้องต้น: ${err.message})`;
-      }
-      alert(`${userMessage}\n\n==== สำคัญมาก! ====\nกรุณาเปิด Console ของเบราว์เซอร์ (กด F12) และทำตามนี้:\n1. มองหาบรรทัดที่ขึ้นต้นด้วย '>>> EXPAND THIS OBJECT TO SEE SUPABASE ERROR DETAILS:'.\n2. **คลิกที่รูปลูกศร (▶) หรือสามเหลี่ยมเล็กๆ ด้านซ้ายของคำว่า 'Object' ที่แสดงในบรรทัดนั้น** เพื่อขยายดูรายละเอียดทั้งหมดของ Error.\n3. แจ้งรายละเอียดที่ขยายออกมานั้น (เช่น message, details, code, hint) ให้ผู้พัฒนาทราบ`);
+    if (data) {
+      // Add the new item to the top of the list for immediate feedback
+      setInfographics(prev => [data as Infographic, ...prev]);
+    } else {
+      // Fallback if the insert operation doesn't return the new data
+      fetchInfographics();
     }
   };
 
