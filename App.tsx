@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -10,95 +10,17 @@ import AdminPage from './pages/AdminPage';
 import InfographicsPage from './pages/InfographicsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import AllStoriesPage from './pages/AllStoriesPage'; // 1. Import AllStoriesPage
-import { Infographic } from './src/types';
-import { supabase } from './src/supabaseClient';
-
+import { useInfographics } from './src/hooks/useInfographics';
 
 const App: React.FC = () => {
-  const [infographics, setInfographics] = useState<Infographic[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchInfographics = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error: supabaseError } = await supabase
-        .from('infographics')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (supabaseError) {
-        throw supabaseError;
-      }
-      setInfographics(data || []);
-    } catch (err: any) {
-      console.error('Error fetching infographics:', err);
-      let fetchErrorMessage = 'เกิดข้อผิดพลาดในการดึงข้อมูล';
-      if (err && err.message) {
-        fetchErrorMessage = err.message;
-      } else if (typeof err === 'string') {
-        fetchErrorMessage = err;
-      }
-      setError(fetchErrorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchInfographics();
-  }, [fetchInfographics]);
-
-  const addInfographic = async (newInfo: Omit<Infographic, 'id' | 'date' | 'created_at'>) => {
-    try {
-      const itemToAdd = {
-        ...newInfo,
-        date: new Date().toLocaleDateString('th-TH', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
-      };
-      
-      console.log('Attempting to insert to Supabase:', itemToAdd);
-
-      const { data, error: supabaseError } = await supabase
-        .from('infographics')
-        .insert([itemToAdd]) 
-        .select() 
-        .single(); 
-
-      if (supabaseError) {
-        console.error('Supabase returned an error object during insert:', supabaseError);
-        throw supabaseError; 
-      }
-
-      if (data) {
-        setInfographics(prev => [data as Infographic, ...prev]);
-      } else {
-        console.warn('Supabase insert did not return data and did not throw an explicit error. Refetching all infographics to ensure UI consistency.');
-        fetchInfographics(); 
-      }
-    } catch (err: any) { // This 'err' should be the supabaseError object if thrown from above
-      // THE MOST IMPORTANT LOG: Expand this object in your browser's Developer Console!
-      console.error('>>> EXPAND THIS OBJECT TO SEE SUPABASE ERROR DETAILS:', err); 
-
-      let userMessage = 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล.';
-      if (err && typeof err === 'object' && err.message) {
-         userMessage += ` (ข้อความเบื้องต้น: ${err.message})`;
-      }
-      
-      alert(
-        `${userMessage}\n\n` +
-        "==== สำคัญมาก! ====\n" +
-        "กรุณาเปิด Console ของเบราว์เซอร์ (กด F12) และทำตามนี้:\n" +
-        "1. มองหาบรรทัดที่ขึ้นต้นด้วย '>>> EXPAND THIS OBJECT TO SEE SUPABASE ERROR DETAILS:'.\n" +
-        "2. **คลิกที่รูปลูกศร (▶) หรือสามเหลี่ยมเล็กๆ ด้านซ้ายของคำว่า 'Object' ที่แสดงในบรรทัดนั้น** เพื่อขยายดูรายละเอียดทั้งหมดของ Error.\n" +
-        "3. แจ้งรายละเอียดที่ขยายออกมานั้น (เช่น message, details, code, hint) ให้ผู้พัฒนาทราบ"
-      );
-    }
-  };
+  const {
+    infographics,
+    loading,
+    error,
+    fetchInfographics,
+    addInfographic,
+    updateInfographicInState,
+  } = useInfographics();
 
   if (loading) {
     return (
@@ -140,13 +62,7 @@ const App: React.FC = () => {
                 <ItemDetailPage
                   infographics={infographics} // Pass all infographics
                   isAdmin={true}
-                  onItemUpdate={(updatedItem) =>
-                    setInfographics((prev) =>
-                      prev.map((item) =>
-                        item.id === updatedItem.id ? updatedItem : item
-                      )
-                    )
-                  }
+                  onItemUpdate={updateInfographicInState}
                   reFetchInfographics={fetchInfographics}
                 />
               }
