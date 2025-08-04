@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 // --- Configuration ---
-// 1. ตั้งค่า URL ของเว็บไซต์จริงของคุณ (สำคัญมาก!)
-const BASE_URL = 'https://kasetinfo.netlify.app'; 
+// 1. ตั้งค่า URL ของเว็บไซต์จริงของคุณ
+const BASE_URL = 'https://kasetinfo.netlify.app';
 
 // 2. โหลด Environment Variables จากไฟล์ .env
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -22,38 +22,44 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 async function generateSitemap() {
   console.log('Starting sitemap generation...');
   const today = new Date().toISOString().split('T')[0];
+  // Ensure BASE_URL doesn't have a trailing slash for consistency
+  const baseUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     // 3. กำหนดรายการหน้าเว็บแบบ Static
     // IMPORTANT: Keep this list in sync with the routes defined in App.tsx
-    const staticPages = [
+    const staticPaths = [
       '/', // Homepage
       '/infographics',
       '/articles',
       '/technology',
       '/admin',
       '/all-stories',
-    ].map(p => `${BASE_URL}${p}`);
+    ];
 
-    let allUrls = staticPages.map(url => ({ loc: url, lastmod: today }));
+    let allUrls = staticPaths.map(p => ({
+      loc: new URL(p, baseUrl).href,
+      lastmod: today
+    }));
 
     // 4. ดึงข้อมูลหน้าเว็บแบบ Dynamic (จาก Supabase)
     try {
       const { data: infographics, error } = await supabase
         .from('infographics')
-        .select('id, updated_at'); // ดึง updated_at มาใช้กับ <lastmod>
+        .select('id, updated_at');
 
       if (error) {
         throw error; // Let the outer catch block handle it
       }
 
       const dynamicUrls = infographics.map(item => ({
-        loc: `${BASE_URL}/item/${item.id}`,
+        loc: new URL(`/item/${item.id}`, baseUrl).href,
         lastmod: item.updated_at ? new Date(item.updated_at).toISOString().split('T')[0] : today,
       }));
 
-      allUrls = [...staticPages.map(url => ({ loc: url, lastmod: today })), ...dynamicUrls];
+      allUrls.push(...dynamicUrls);
 
     } catch (fetchErr) {
       console.warn('\n\x1b[33m%s\x1b[0m', '⚠️ WARNING: Failed to fetch dynamic routes from Supabase.');
@@ -65,19 +71,18 @@ async function generateSitemap() {
 
     // 5. สร้างเนื้อหา XML
     const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${allUrls.map(urlData => {
-    const isHomePage = urlData.loc === BASE_URL || urlData.loc === `${BASE_URL}/`;
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${allUrls.map(urlData => {
+    const isHomePage = urlData.loc === baseUrl || urlData.loc === `${baseUrl}/`;
     const isItemPage = urlData.loc.includes('/item/');
     const priority = isHomePage ? '1.0' : isItemPage ? '0.8' : '0.9';
 
     return `
-    <url>
-      <loc>${urlData.loc}</loc>
-      <lastmod>${urlData.lastmod}</lastmod>
-      <changefreq>daily</changefreq>
-      <priority>${priority}</priority>
-    </url>`;
+  <url>
+    <loc>${urlData.loc}</loc>
+    <lastmod>${urlData.lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
   }).join('')}
 </urlset>`;
 

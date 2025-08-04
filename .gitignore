@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+public/sitemap.xml
+dist/sitemap.xml
 *.local
 
 # Editor directories and files
